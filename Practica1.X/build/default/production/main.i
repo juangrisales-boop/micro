@@ -5,7 +5,7 @@
 # 1 "<command line>" 1
 # 1 "<built-in>" 2
 # 1 "main.s" 2
- PROCESSOR 18F4550
+PROCESSOR 18F4550
 # 1 "C:\\Program Files\\Microchip\\xc8\\v3.10\\pic\\include/xc.inc" 1 3
 
 
@@ -5446,112 +5446,131 @@ ENDM
 # 3 "main.s" 2
 
 ; --- CONFIGURACIÓN DE FUSIBLES ---
-config FOSC = INTOSC_EC ; Oscilador interno
-config WDT = OFF ; Watchdog desactivado
-config LVP = OFF ; Programación de bajo voltaje desactivada
-config PBADEN = OFF ; Puertos B0-B4 digitales
+config FOSC = INTOSC_EC ; Oscilador interno 8MHz
+config WDT = OFF
+config LVP = OFF
+config PBADEN = OFF
+config MCLRE = ON
 
-; --- RESERVA DE MEMORIA RAM ---
+; --- MEMORIA RAM ---
 psect udata_acs
-temp_celsius: DS 1 ; Lectura en Celsius
-temp_fahrenheit: DS 1 ; Lectura en Fahrenheit
-modo_pantalla: DS 1 ; 0 = Celsius, 1 = Fahrenheit
-decenas: DS 1 ; Dígito de decenas
-unidades: DS 1 ; Dígito de unidades
+temp_celsius: DS 1
+temp_fahrenheit: DS 1
+modo_pantalla: DS 1
+decenas: DS 1
+unidades: DS 1
+delay_cnt: DS 1
 
-; --- VECTOR DE RESET ---
-psect resetVec, class=CODE, reloc=2
+; --- VECTORES DE INTERRUPCIÓN Y RESET ABSOLUTOS ---
+psect resetVec, class=CODE, delta=1, abs
+org 0x0000
 resetVec:
     goto MAIN
 
-; --- VECTOR DE INTERRUPCIÓN ---
-psect intCodeHi, class=CODE, reloc=2
+psect intCodeHi, class=CODE, delta=1, abs
+org 0x0008
 intCodeHi:
     goto ISR_HIGH
 
-; --- CÓDIGO PRINCIPAL ---
-psect code, class=CODE, reloc=2
+; --- CÓDIGO PRINCIPAL Y TABLA ---
+psect code, class=CODE, delta=1, reloc=2
+
+TABLA_7SEG_DATA:
+    db 0b00111111 ; 0
+    db 0b00000110 ; 1
+    db 0b01011011 ; 2
+    db 0b01001111 ; 3
+    db 0b01100110 ; 4
+    db 0b01101101 ; 5
+    db 0b01111101 ; 6
+    db 0b00000111 ; 7
+    db 0b01111111 ; 8
+    db 0b01101111 ; 9
+
 MAIN:
+    movlw 0b01110000 ; Oscilador interno a 8 MHz
+    movwf OSCCON, c
+
     call CONFIG_PUERTOS
     call CONFIG_INTERRUPCIONES
     call CONFIG_ADC
     call CONFIG_TIMER0
+
+    ; Lectura inicial
+    bsf ADCON0, 1, c
+ESPERAR_ADC_INIT:
+    btfsc ADCON0, 1, c
+    goto ESPERAR_ADC_INIT
+
+    ; Lectura 10-bits dividida entre 2 (Resolución exactitud 1°C)
+    bcf STATUS, 0, c
+    rrcf ADRESH, w, c
+    rrcf ADRESL, w, c
+    movwf temp_celsius, c
 
 MAIN_LOOP:
     call CALCULAR_DIGITOS
     call MULTIPLEXAR_DISPLAYS
     goto MAIN_LOOP
 
-; --- TABLA 7 SEGMENTOS (CÁTODO COMÚN: 0-9) ---
 TABLA_7SEG:
-    movf WREG, w, c
-    addwf PCL, f, c
-    retlw 0b00111111 ; 0
-    retlw 0b00000110 ; 1
-    retlw 0b01011011 ; 2
-    retlw 0b01001111 ; 3
-    retlw 0b01100110 ; 4
-    retlw 0b01101101 ; 5
-    retlw 0b01111101 ; 6
-    retlw 0b00000111 ; 7
-    retlw 0b01111111 ; 8
-    retlw 0b01101111 ; 9
+    andlw 0x0F
+    movwf TBLPTRL, c
+    movlw low(TABLA_7SEG_DATA)
+    addwf TBLPTRL, f, c
+    movlw high(TABLA_7SEG_DATA)
+    movwf TBLPTRH, c
+    btfsc STATUS, 0, c
+    incf TBLPTRH, f, c
+    clrf TBLPTRU, c
+    tblrd*
+    movf TABLAT, w, c
+    return
 
-; --- RUTINAS DE CONFIGURACIÓN ---
 CONFIG_PUERTOS:
-    ; Entradas: ((PORTB) and 0FFh), 0, a, ((PORTB) and 0FFh), 1, a, ((PORTB) and 0FFh), 2, a (Pulsadores) | ((PORTA) and 0FFh), 0, a (LM35)
-    bsf TRISB, 0, c
+    bsf TRISB, 0, c ; ((PORTB) and 0FFh), 0, a, ((PORTB) and 0FFh), 1, a, ((PORTB) and 0FFh), 2, a Entradas
     bsf TRISB, 1, c
     bsf TRISB, 2, c
-    bsf TRISA, 0, c
+    bsf TRISA, 0, c ; ((PORTA) and 0FFh), 0, a Entrada LM35
 
-    ; Salidas: LATC (Segmentos A-G) | LATD (((PORTD) and 0FFh), 0, a: Alarma, ((PORTD) and 0FFh), 1, a: Vent, ((PORTD) and 0FFh), 2, a: Disp1, ((PORTD) and 0FFh), 3, a: Disp2)
-    clrf TRISC, c
-    clrf TRISD, c
+    clrf TRISC, c ; PORTC Salidas
+    clrf TRISD, c ; PORTD Salidas para 7SEG
     clrf LATC, c
     clrf LATD, c
     return
 
 CONFIG_INTERRUPCIONES:
-    bcf INTCON2, 7, c ; ((INTCON2) and 0FFh), 7, a habilitado
-    bcf INTCON2, 6, c
-    bcf INTCON2, 5, c
-    bcf INTCON2, 4, c
-
+    bcf INTCON2, 7, c ; Pull-ups en Puerto B
     bcf INTCON, 1, c
     bcf INTCON3, 0, c
     bcf INTCON3, 1, c
 
-    bsf INTCON, 4, c ; ((INTCON) and 0FFh), 4, a
-    bsf INTCON3, 3, c ; ((INTCON3) and 0FFh), 3, a
-    bsf INTCON3, 4, c ; ((INTCON3) and 0FFh), 4, a
+    bsf INTCON, 4, c ; ((PORTB) and 0FFh), 0, a
+    bsf INTCON3, 3, c ; ((PORTB) and 0FFh), 1, a
+    bsf INTCON3, 4, c ; ((PORTB) and 0FFh), 2, a
     bsf INTCON, 7, c ; ((INTCON) and 0FFh), 7, a
     return
 
 CONFIG_ADC:
-    movlw 0b00001110
+    movlw 0b00001110 ; ((PORTA) and 0FFh), 0, a analógico
     movwf ADCON1, c
-    movlw 0b10101010
+    movlw 0b10101010 ; Justificación DERECHA (10 bits), 12 TAD, Fosc/32
     movwf ADCON2, c
-    movlw 0b00000001
+    movlw 0b00000001 ; Activar ADC
     movwf ADCON0, c
     return
 
 CONFIG_TIMER0:
-    movlw 0b10000111
+    movlw 0b11000111 ; Prescaler 1:256 (~32ms)
     movwf T0CON, c
-    clrf TMR0H, c
     clrf TMR0L, c
     bcf INTCON, 2, c
-    bsf INTCON, 5, c
+    bsf INTCON, 5, c ; Habilitar Int Timer0
     return
 
-; --- LÓGICA DE MULTIPLEXACIÓN Y BCD ---
 CALCULAR_DIGITOS:
-    ; Cargar la temperatura según el modo seleccionado (°C o °F)
     btfsc modo_pantalla, 0, c
     goto USAR_FAHRENHEIT
-
     movf temp_celsius, w, c
     goto SEPARAR_DEC_UNI
 
@@ -5559,36 +5578,47 @@ USAR_FAHRENHEIT:
     movf temp_fahrenheit, w, c
 
 SEPARAR_DEC_UNI:
-    ; Restas sucesivas de 10 para obtener decenas y unidades
     clrf decenas, c
+    movwf unidades, c
+
 BUCLE_DEC:
-    sublw 10
-    btfss STATUS, 0, c ; ¿Resultado negativo?
+    movlw 10
+    subwf unidades, w, c
+    btfss STATUS, 0, c
     goto FIN_BCD
+    movwf unidades, c
     incf decenas, f, c
     goto BUCLE_DEC
+
 FIN_BCD:
-    addlw 10
-    movwf unidades, c
     return
 
 MULTIPLEXAR_DISPLAYS:
-    ; 1. Mostrar Decenas en Display 1 (((PORTD) and 0FFh), 2, a)
-    bcf LATD, 3, c ; Apaga Display 2
+    ; Display 1 (Decenas - ((PORTC) and 0FFh), 0, a)
+    bcf LATC, 1, c
     movf decenas, w, c
     call TABLA_7SEG
-    movwf LATC, c ; Envia segmentos a Puerto C
-    bsf LATD, 2, c ; Enciende Display 1
+    movwf LATD, c
+    bsf LATC, 0, c
+    call DELAY_RAPIDO
 
-    ; 2. Mostrar Unidades en Display 2 (((PORTD) and 0FFh), 3, a)
-    bcf LATD, 2, c ; Apaga Display 1
+    ; Display 2 (Unidades - ((PORTC) and 0FFh), 1, a)
+    bcf LATC, 0, c
     movf unidades, w, c
     call TABLA_7SEG
-    movwf LATC, c ; Envia segmentos a Puerto C
-    bsf LATD, 3, c ; Enciende Display 2
+    movwf LATD, c
+    bsf LATC, 1, c
+    call DELAY_RAPIDO
     return
 
-; --- ISR ---
+DELAY_RAPIDO:
+    movlw 15 ; Retardo ultra liviano para evitar saturar Proteus
+    movwf delay_cnt, c
+DELAY_LOOP:
+    decfsz delay_cnt, f, c
+    goto DELAY_LOOP
+    return
+
 ISR_HIGH:
     btfsc INTCON, 1, c
     goto ATENDER_INT0
@@ -5605,37 +5635,41 @@ ISR_HIGH:
     retfie 1
 
 ATENDER_INT0:
-    btg LATD, 0, c
+    btg LATC, 2, c ; LED Alarma (((PORTC) and 0FFh), 2, a)
     bcf INTCON, 1, c
     retfie 1
 
 ATENDER_INT1:
-    btg LATD, 1, c
+    btg LATC, 6, c ; LED Ventilador (((PORTC) and 0FFh), 6, a)
     bcf INTCON3, 0, c
     retfie 1
 
 ATENDER_INT2:
-    btg modo_pantalla, 0, c
+    btg modo_pantalla, 0, c ; Alternar °C / °F
     bcf INTCON3, 1, c
     retfie 1
 
- ATENDER_TIMER0:
-    bcf INTCON, 2, c ; Limpia bandera ((INTCON) and 0FFh), 2, a
-    bsf ADCON0, 1, c ; Inicia conversión del ADC
-    movf ADRESH, w, c
-    movwf temp_celsius, c ; Guarda lectura en °C
+ATENDER_TIMER0:
+    bcf INTCON, 2, c
 
-    ; Conversión aprox a Fahrenheit: °F = (°C * 2) + 32
-    rlncf WREG, w, c ; Multiplica °C por 2
-    addlw 32 ; Suma 32
+    ; Conversión de 10 bits dividida por 2 = °C exactos
+    bcf STATUS, 0, c
+    rrcf ADRESH, w, c
+    rrcf ADRESL, w, c
+    movwf temp_celsius, c
+
+    ; Fahrenheit = (Celsius * 2) + 32
+    rlncf WREG, w, c
+    addlw 32
     movwf temp_fahrenheit, c
 
-    ; Alerta automática: Si Temp >= 35°C activa el Ventilador (((PORTD) and 0FFh), 1, a)
+    ; Control de ventilador (>35°C)
     movlw 35
     subwf temp_celsius, w, c
-    btfsc STATUS, 0, c ; ¿Es mayor o igual a 35°C?
-    bsf LATD, 1, c ; Enciende el ventilador automáticamente
+    btfsc STATUS, 0, c
+    bsf LATC, 6, c
 
+    bsf ADCON0, 1, c ; Iniciar nueva conversión
     retfie 1
 
 END resetVec
