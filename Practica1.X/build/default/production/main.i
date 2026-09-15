@@ -5,7 +5,7 @@
 # 1 "<command line>" 1
 # 1 "<built-in>" 2
 # 1 "main.s" 2
-PROCESSOR 18F4550
+ PROCESSOR 18F4550
 # 1 "C:\\Program Files\\Microchip\\xc8\\v3.10\\pic\\include/xc.inc" 1 3
 
 
@@ -5481,7 +5481,7 @@ MAIN_LOOP:
     goto MAIN_LOOP
 
 ; --- RUTINAS DE CONFIGURACIÓN ---
- CONFIG_PUERTOS:
+CONFIG_PUERTOS:
     ; Entradas para pulsadores: ((PORTB) and 0FFh), 0, a(((PORTB) and 0FFh), 0, a), ((PORTB) and 0FFh), 1, a(((PORTB) and 0FFh), 1, a), ((PORTB) and 0FFh), 2, a(((PORTB) and 0FFh), 2, a)
     bsf TRISB, 0, c
     bsf TRISB, 1, c
@@ -5496,7 +5496,7 @@ MAIN_LOOP:
     bcf LATD, 1, c
     return
 
- CONFIG_INTERRUPCIONES:
+CONFIG_INTERRUPCIONES:
     ; 1. INTCON2: Activar pull-ups internas y flanco de bajada (al presionar)
     bcf INTCON2, 7, c ; ((INTCON2) and 0FFh), 7, a = 0 (Pull-ups habilitadas en Puerto B)
     bcf INTCON2, 6, c ; ((INTCON2) and 0FFh), 6, a = 0 (Flanco de bajada ((PORTB) and 0FFh), 0, a)
@@ -5518,13 +5518,39 @@ MAIN_LOOP:
     return
 
 CONFIG_ADC:
+    ; Configurar ((PORTA) and 0FFh), 0, a/((PORTA) and 0FFh), 0, a como entrada analógica
+    bsf TRISA, 0, c
+
+    ; ADCON1: ((PORTA) and 0FFh), 0, a como analógico (PCFG = 1110), VREF+ = VDD, VREF- = VSS
+    movlw 0b00001110
+    movwf ADCON1, c
+
+    ; ADCON2: Justificación derecha, 12 TAD, Fosc/16
+    movlw 0b10101010
+    movwf ADCON2, c
+
+    ; ADCON0: Selección de Canal ((PORTA) and 0FFh), 0, a (CHS=0000) y encender módulo ADC (((ADCON0) and 0FFh), 0, a=1)
+    movlw 0b00000001
+    movwf ADCON0, c
     return
 
 CONFIG_TIMER0:
+    ; T0CON: Modo 16-bits, Reloj interno (Fosc/4), Prescaler 1:256
+    movlw 0b10000111
+    movwf T0CON, c
+
+    ; Cargar valor inicial en el temporizador
+    movlw 0x00
+    movwf TMR0H, c
+    movwf TMR0L, c
+
+    ; Habilitar la interrupción por desbordamiento de Timer0
+    bcf INTCON, 2, c ; Limpia la bandera ((INTCON) and 0FFh), 2, a
+    bsf INTCON, 5, c ; Habilita la interrupción ((INTCON) and 0FFh), 5, a
     return
 
 ; --- RUTINA DE SERVICIO DE INTERRUPCIÓN (ISR) ---
- ISR_HIGH:
+ISR_HIGH:
     ; ¿Fue ((PORTB) and 0FFh), 0, a? (((PORTB) and 0FFh), 0, a - Alarma)
     btfsc INTCON, 1, c
     goto ATENDER_INT0
@@ -5536,6 +5562,10 @@ CONFIG_TIMER0:
     ; ¿Fue ((PORTB) and 0FFh), 2, a? (((PORTB) and 0FFh), 2, a - Escala °C / °F)
     btfsc INTCON3, 1, c
     goto ATENDER_INT2
+
+    ; ¿Fue Timer0? (Muestreo de temperatura)
+    btfsc INTCON, 2, c
+    goto ATENDER_TIMER0
 
     retfie 1
 
@@ -5552,6 +5582,11 @@ ATENDER_INT1:
 ATENDER_INT2:
     btg modo_pantalla, 0, c ; Alterna entre °C (0) y °F (1)
     bcf INTCON3, 1, c ; Limpia bandera ((INTCON3) and 0FFh), 1, a
+    retfie 1
+
+ATENDER_TIMER0:
+    bcf INTCON, 2, c ; Limpia la bandera ((INTCON) and 0FFh), 2, a
+    bsf ADCON0, 1, c ; Inicia conversión del ADC (bit ((ADCON0) and 0FFh), 1, a/((ADCON0) and 0FFh), 1, a = 1)
     retfie 1
 
 END resetVec
