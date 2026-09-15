@@ -6,7 +6,7 @@ Linker command line:
   --edf=C:\Program Files\Microchip\xc8\v3.10\pic\dat\20250813170317_en.msgs \
   -cs -h+dist/default/production\Practica1.X.production.sym \
   --cmf=dist/default/production\Practica1.X.production.cmf -z -Q18F4550 \
-  -oC:\Users\juang\AppData\Local\Temp\xcAsoag.0\driver_tmp_3.o \
+  -oC:\Users\juang\AppData\Local\Temp\xcAsuo0.0\driver_tmp_3.o \
   --fixupoverflow=error -ver=XC8 PIC(R) Assembler --fixupoverflow=lstwarn \
   -Mdist/default/production/Practica1.X.production.map -E1 \
   -ACODE=00h-07FFFh -ACONST=00h-07FFFh -ASMALLCONST=0800h-08FFhx120 \
@@ -27,16 +27,16 @@ Machine type is 18F4550
                 Name                               Link     Load   Length Selector   Space Scale
 build/default/production/main.o
                 config                           300000   300000        E        0       4
-                intCodeHi                          7F6A     7F6A        4     3FB5       0
-                resetVec                           7F6E     7F6E        4     3FB7       0
-                code                               7F72     7F72       8E     3FB9       0
-                udata_acs                             0        0        4        0       1
+                intCodeHi                          7F0A     7F0A        4     3F85       0
+                resetVec                           7F0E     7F0E        4     3F87       0
+                code                               7F12     7F12       EE     3F89       0
+                udata_acs                             0        0        5        0       1
 
 TOTAL           Name                               Link     Load   Length     Space
         CLASS   CODE           
-                intCodeHi                          7F6A     7F6A        4         0
-                resetVec                           7F6E     7F6E        4         0
-                code                               7F72     7F72       8E         0
+                intCodeHi                          7F0A     7F0A        4         0
+                resetVec                           7F0E     7F0E        4         0
+                code                               7F12     7F12       EE         0
 
         CLASS   CONST          
 
@@ -45,7 +45,7 @@ TOTAL           Name                               Link     Load   Length     Sp
         CLASS   MEDIUMCONST    
 
         CLASS   COMRAM         
-                udata_acs                             0        0        4         1
+                udata_acs                             0        0        5         1
 
         CLASS   ABS1           
 
@@ -84,10 +84,10 @@ TOTAL           Name                               Link     Load   Length     Sp
 
 SEGMENTS        Name                           Load    Length   Top    Selector   Space  Class
 
-                udata_acs                      000000  000004  000004         0       1  COMRAM  
-                intCodeHi                      007F6A  000004  007F6E      3FB5       0  CODE    
-                resetVec                       007F6E  000004  007F72      3FB7       0  CODE    
-                code                           007F72  00008E  008000      3FB9       0  CODE    
+                udata_acs                      000000  000005  000005         0       1  COMRAM  
+                intCodeHi                      007F0A  000004  007F0E      3F85       0  CODE    
+                resetVec                       007F0E  000004  007F12      3F87       0  CODE    
+                code                           007F12  0000EE  008000      3F89       0  CODE    
 
 
 UNUSED ADDRESS RANGES
@@ -103,15 +103,15 @@ UNUSED ADDRESS RANGES
         BANK7            000700-0007FF              100
         BIGRAM           000000-0007FF              800
         BIGSFR           000F60-000FFF               A0
-        CODE             000000-007F69             7F6A
-        COMRAM           000004-00005F               5C
-        CONST            000000-007F69             7F6A
+        CODE             000000-007F09             7F0A
+        COMRAM           000005-00005F               5B
+        CONST            000000-007F09             7F0A
         EEDATA           F00000-F000FF              100
         IDLOC            200000-200007                8
-        MEDIUMCONST      000800-007F69             776A
+        MEDIUMCONST      000800-007F09             770A
         RAM              000060-0007FF              100
         SFR              000F60-000FFF               A0
-        SMALLCONST       000800-007F69              100
+        SMALLCONST       000800-007F09              100
 
                                   Symbol Table
 
@@ -119,7 +119,7 @@ __H__absolute__ __absolute__ 000000  __Hcode         code         000000
 __Hconfig       config       30000E  __Hdata         data         000000
 __Hedata        edata        000000  __HintCodeHi    intCodeHi    000000
 __HresetVec     resetVec     000000  __Hspace_0      (abs)        008000
-__Hspace_1      (abs)        000004  __Hspace_3      (abs)        000000
+__Hspace_1      (abs)        000005  __Hspace_3      (abs)        000000
 __Hspace_4      (abs)        60000E  __Hudata        udata        000000
 __Hudata_acs    udata_acs    000000  __Hudata_bank0  udata_bank0  000000
 __Hudata_bank1  udata_bank1  000000  __Hudata_bank2  udata_bank2  000000
@@ -136,6 +136,6 @@ __Ludata_bank0  udata_bank0  000000  __Ludata_bank1  udata_bank1  000000
 __Ludata_bank2  udata_bank2  000000  __Ludata_bank3  udata_bank3  000000
 __Ludata_bank4  udata_bank4  000000  __Ludata_bank5  udata_bank5  000000
 __Ludata_bank6  udata_bank6  000000  __Ludata_bank7  udata_bank7  000000
-__S0            (abs)        008000  __S1            (abs)        000004
+__S0            (abs)        008000  __S1            (abs)        000005
 __S3            (abs)        000000  isa$std         (abs)        000001
 isa$xinst       (abs)        000000  

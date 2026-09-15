@@ -1,25 +1,26 @@
  PROCESSOR 18F4550
 #include <xc.inc>
 
-; --- CONFIGURACIÓN DE FUSIBLES (Bits de Configuración) ---
+; --- CONFIGURACIÓN DE FUSIBLES ---
 config FOSC = INTOSC_EC  ; Oscilador interno
-config WDT = OFF        ; Watchdog Timer desactivado
+config WDT = OFF        ; Watchdog desactivado
 config LVP = OFF        ; Programación de bajo voltaje desactivada
-config PBADEN = OFF     ; Puertos B0-B4 como entradas digitales al reset
+config PBADEN = OFF     ; Puertos B0-B4 digitales
 
-; --- RESERVA DE MEMORIA RAM (Variables) ---
+; --- RESERVA DE MEMORIA RAM ---
 psect udata_acs
 temp_celsius:    DS 1    ; Lectura en Celsius
 temp_fahrenheit: DS 1    ; Lectura en Fahrenheit
 modo_pantalla:   DS 1    ; 0 = Celsius, 1 = Fahrenheit
-estado_sistema:  DS 1    ; Bit 0: Alarma, Bit 1: Ventilador
+decenas:         DS 1    ; Dígito de decenas
+unidades:        DS 1    ; Dígito de unidades
 
 ; --- VECTOR DE RESET ---
 psect resetVec, class=CODE, reloc=2
 resetVec:
     goto MAIN
 
-; --- VECTOR DE INTERRUPCIÓN ALTA PRIORIDAD ---
+; --- VECTOR DE INTERRUPCIÓN ---
 psect intCodeHi, class=CODE, reloc=2
 intCodeHi:
     goto ISR_HIGH
@@ -33,116 +34,152 @@ MAIN:
     call CONFIG_TIMER0
 
 MAIN_LOOP:
-    ; Aquí irá la rutina de refresco para los 2 displays de 7 segmentos
+    call CALCULAR_DIGITOS
+    call MULTIPLEXAR_DISPLAYS
     goto MAIN_LOOP
+
+; --- TABLA 7 SEGMENTOS (CÁTODO COMÚN: 0-9) ---
+TABLA_7SEG:
+    movf    WREG, w, c
+    addwf   PCL, f, c
+    retlw   0b00111111  ; 0
+    retlw   0b00000110  ; 1
+    retlw   0b01011011  ; 2
+    retlw   0b01001111  ; 3
+    retlw   0b01100110  ; 4
+    retlw   0b01101101  ; 5
+    retlw   0b01111101  ; 6
+    retlw   0b00000111  ; 7
+    retlw   0b01111111  ; 8
+    retlw   0b01101111  ; 9
 
 ; --- RUTINAS DE CONFIGURACIÓN ---
 CONFIG_PUERTOS:
-    ; Entradas para pulsadores: RB0(INT0), RB1(INT1), RB2(INT2)
+    ; Entradas: RB0, RB1, RB2 (Pulsadores) | RA0 (LM35)
     bsf     TRISB, 0, c
     bsf     TRISB, 1, c
     bsf     TRISB, 2, c
-    
-    ; Salidas: RD0 para LED Alarma, RD1 para Ventilador
-    bcf     TRISD, 0, c
-    bcf     TRISD, 1, c
-    
-    ; Apagar salidas al inicio
-    bcf     LATD, 0, c
-    bcf     LATD, 1, c
+    bsf     TRISA, 0, c
+
+    ; Salidas: LATC (Segmentos A-G) | LATD (RD0: Alarma, RD1: Vent, RD2: Disp1, RD3: Disp2)
+    clrf    TRISC, c
+    clrf    TRISD, c
+    clrf    LATC, c
+    clrf    LATD, c
     return
 
 CONFIG_INTERRUPCIONES:
-    ; 1. INTCON2: Activar pull-ups internas y flanco de bajada (al presionar)
-    bcf     INTCON2, 7, c  ; RBPU = 0 (Pull-ups habilitadas en Puerto B)
-    bcf     INTCON2, 6, c  ; INTEDG0 = 0 (Flanco de bajada RB0)
-    bcf     INTCON2, 5, c  ; INTEDG1 = 0 (Flanco de bajada RB1)
-    bcf     INTCON2, 4, c  ; INTEDG2 = 0 (Flanco de bajada RB2)
+    bcf     INTCON2, 7, c  ; RBPU habilitado
+    bcf     INTCON2, 6, c
+    bcf     INTCON2, 5, c
+    bcf     INTCON2, 4, c
 
-    ; 2. Limpiar banderas de interrupción antes de activar
-    bcf     INTCON, 1, c   ; INT0IF = 0
-    bcf     INTCON3, 0, c  ; INT1IF = 0
-    bcf     INTCON3, 1, c  ; INT2IF = 0
+    bcf     INTCON, 1, c
+    bcf     INTCON3, 0, c
+    bcf     INTCON3, 1, c
 
-    ; 3. Habilitar habilitadores de interrupción
-    bsf     INTCON, 4, c   ; INT0IE = 1 (Habilita INT0)
-    bsf     INTCON3, 3, c  ; INT1IE = 1 (Habilita INT1)
-    bsf     INTCON3, 4, c  ; INT2IE = 1 (Habilita INT2)
-
-    ; 4. INTCON: Habilitar interrupciones globales
-    bsf     INTCON, 7, c   ; GIE = 1
+    bsf     INTCON, 4, c   ; INT0IE
+    bsf     INTCON3, 3, c  ; INT1IE
+    bsf     INTCON3, 4, c  ; INT2IE
+    bsf     INTCON, 7, c   ; GIE
     return
 
 CONFIG_ADC:
-    ; Configurar RA0/AN0 como entrada analógica
-    bsf     TRISA, 0, c
-    
-    ; ADCON1: AN0 como analógico (PCFG = 1110), VREF+ = VDD, VREF- = VSS
     movlw   0b00001110
     movwf   ADCON1, c
-    
-    ; ADCON2: Justificación derecha, 12 TAD, Fosc/16
     movlw   0b10101010
     movwf   ADCON2, c
-    
-    ; ADCON0: Selección de Canal AN0 (CHS=0000) y encender módulo ADC (ADON=1)
     movlw   0b00000001
     movwf   ADCON0, c
     return
 
 CONFIG_TIMER0:
-    ; T0CON: Modo 16-bits, Reloj interno (Fosc/4), Prescaler 1:256
     movlw   0b10000111
     movwf   T0CON, c
-    
-    ; Cargar valor inicial en el temporizador
-    movlw   0x00
-    movwf   TMR0H, c
-    movwf   TMR0L, c
-    
-    ; Habilitar la interrupción por desbordamiento de Timer0
-    bcf     INTCON, 2, c    ; Limpia la bandera TMR0IF
-    bsf     INTCON, 5, c    ; Habilita la interrupción TMR0IE
+    clrf    TMR0H, c
+    clrf    TMR0L, c
+    bcf     INTCON, 2, c
+    bsf     INTCON, 5, c
     return
 
-; --- RUTINA DE SERVICIO DE INTERRUPCIÓN (ISR) ---
+; --- LÓGICA DE MULTIPLEXACIÓN Y BCD ---
+CALCULAR_DIGITOS:
+    ; Cargar la temperatura según el modo seleccionado (°C o °F)
+    btfsc   modo_pantalla, 0, c
+    goto    USAR_FAHRENHEIT
+
+    movf    temp_celsius, w, c
+    goto    SEPARAR_DEC_UNI
+
+USAR_FAHRENHEIT:
+    movf    temp_fahrenheit, w, c
+
+SEPARAR_DEC_UNI:
+    ; Restas sucesivas de 10 para obtener decenas y unidades
+    clrf    decenas, c
+BUCLE_DEC:
+    sublw   10
+    btfss   STATUS, 0, c  ; ¿Resultado negativo?
+    goto    FIN_BCD
+    incf    decenas, f, c
+    goto    BUCLE_DEC
+FIN_BCD:
+    addlw   10
+    movwf   unidades, c
+    return
+
+MULTIPLEXAR_DISPLAYS:
+    ; 1. Mostrar Decenas en Display 1 (RD2)
+    bcf     LATD, 3, c          ; Apaga Display 2
+    movf    decenas, w, c
+    call    TABLA_7SEG
+    movwf   LATC, c             ; Envia segmentos a Puerto C
+    bsf     LATD, 2, c          ; Enciende Display 1
+    
+    ; 2. Mostrar Unidades en Display 2 (RD3)
+    bcf     LATD, 2, c          ; Apaga Display 1
+    movf    unidades, w, c
+    call    TABLA_7SEG
+    movwf   LATC, c             ; Envia segmentos a Puerto C
+    bsf     LATD, 3, c          ; Enciende Display 2
+    return
+
+; --- ISR ---
 ISR_HIGH:
-    ; ¿Fue INT0? (RB0 - Alarma)
     btfsc   INTCON, 1, c
     goto    ATENDER_INT0
 
-    ; ¿Fue INT1? (RB1 - Ventilador)
     btfsc   INTCON3, 0, c
     goto    ATENDER_INT1
 
-    ; ¿Fue INT2? (RB2 - Escala °C / °F)
     btfsc   INTCON3, 1, c
     goto    ATENDER_INT2
 
-    ; ¿Fue Timer0? (Muestreo de temperatura)
     btfsc   INTCON, 2, c
     goto    ATENDER_TIMER0
 
     retfie  1
 
 ATENDER_INT0:
-    btg     LATD, 0, c          ; Alterna estado del LED Alarma (RD0)
-    bcf     INTCON, 1, c        ; Limpia bandera INT0IF
+    btg     LATD, 0, c
+    bcf     INTCON, 1, c
     retfie  1
 
 ATENDER_INT1:
-    btg     LATD, 1, c          ; Alterna estado del Ventilador (RD1)
-    bcf     INTCON3, 0, c       ; Limpia bandera INT1IF
+    btg     LATD, 1, c
+    bcf     INTCON3, 0, c
     retfie  1
 
 ATENDER_INT2:
-    btg     modo_pantalla, 0, c ; Alterna entre °C (0) y °F (1)
-    bcf     INTCON3, 1, c       ; Limpia bandera INT2IF
+    btg     modo_pantalla, 0, c
+    bcf     INTCON3, 1, c
     retfie  1
 
 ATENDER_TIMER0:
-    bcf     INTCON, 2, c        ; Limpia la bandera TMR0IF
-    bsf     ADCON0, 1, c        ; Inicia conversión del ADC (bit GO/DONE = 1)
+    bcf     INTCON, 2, c
+    bsf     ADCON0, 1, c        ; Inicia ADC
+    movf    ADRESH, w, c
+    movwf   temp_celsius, c     ; Guarda resultado en temp_celsius
     retfie  1
 
 END resetVec
