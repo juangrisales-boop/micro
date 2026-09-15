@@ -6,7 +6,7 @@ Linker command line:
   --edf=C:\Program Files\Microchip\xc8\v3.10\pic\dat\20250813170317_en.msgs \
   -cs -h+dist/default/production\Practica1.X.production.sym \
   --cmf=dist/default/production\Practica1.X.production.cmf -z -Q18F4550 \
-  -oC:\Users\juang\AppData\Local\Temp\xcAsf2g.0\driver_tmp_3.o \
+  -oC:\Users\juang\AppData\Local\Temp\xcAstt0.0\driver_tmp_3.o \
   --fixupoverflow=error -ver=XC8 PIC(R) Assembler --fixupoverflow=lstwarn \
   -Mdist/default/production/Practica1.X.production.map -E1 \
   -ACODE=00h-07FFFh -ACONST=00h-07FFFh -ASMALLCONST=0800h-08FFhx120 \
@@ -27,16 +27,16 @@ Machine type is 18F4550
                 Name                               Link     Load   Length Selector   Space Scale
 build/default/production/main.o
                 config                           300000   300000        E        0       4
-                intCodeHi                          7FD4     7FD4        4     3FEA       0
-                resetVec                           7FD8     7FD8        4     3FEC       0
-                code                               7FDC     7FDC       24     3FEE       0
+                intCodeHi                          7F92     7F92        4     3FC9       0
+                resetVec                           7F96     7F96        4     3FCB       0
+                code                               7F9A     7F9A       66     3FCD       0
                 udata_acs                             0        0        4        0       1
 
 TOTAL           Name                               Link     Load   Length     Space
         CLASS   CODE           
-                intCodeHi                          7FD4     7FD4        4         0
-                resetVec                           7FD8     7FD8        4         0
-                code                               7FDC     7FDC       24         0
+                intCodeHi                          7F92     7F92        4         0
+                resetVec                           7F96     7F96        4         0
+                code                               7F9A     7F9A       66         0
 
         CLASS   CONST          
 
@@ -85,9 +85,9 @@ TOTAL           Name                               Link     Load   Length     Sp
 SEGMENTS        Name                           Load    Length   Top    Selector   Space  Class
 
                 udata_acs                      000000  000004  000004         0       1  COMRAM  
-                intCodeHi                      007FD4  000004  007FD8      3FEA       0  CODE    
-                resetVec                       007FD8  000004  007FDC      3FEC       0  CODE    
-                code                           007FDC  000024  008000      3FEE       0  CODE    
+                intCodeHi                      007F92  000004  007F96      3FC9       0  CODE    
+                resetVec                       007F96  000004  007F9A      3FCB       0  CODE    
+                code                           007F9A  000066  008000      3FCD       0  CODE    
 
 
 UNUSED ADDRESS RANGES
@@ -103,15 +103,15 @@ UNUSED ADDRESS RANGES
         BANK7            000700-0007FF              100
         BIGRAM           000000-0007FF              800
         BIGSFR           000F60-000FFF               A0
-        CODE             000000-007FD3             7FD4
+        CODE             000000-007F91             7F92
         COMRAM           000004-00005F               5C
-        CONST            000000-007FD3             7FD4
+        CONST            000000-007F91             7F92
         EEDATA           F00000-F000FF              100
         IDLOC            200000-200007                8
-        MEDIUMCONST      000800-007FD3             77D4
+        MEDIUMCONST      000800-007F91             7792
         RAM              000060-0007FF              100
         SFR              000F60-000FFF               A0
-        SMALLCONST       000800-007FD3              100
+        SMALLCONST       000800-007F91              100
 
                                   Symbol Table
 

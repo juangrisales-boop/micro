@@ -5481,14 +5481,40 @@ MAIN_LOOP:
     goto MAIN_LOOP
 
 ; --- RUTINAS DE CONFIGURACIÓN ---
-CONFIG_PUERTOS:
-    ; Configurar ((PORTB) and 0FFh), 0, a, ((PORTB) and 0FFh), 1, a, ((PORTB) and 0FFh), 2, a como entradas (Pulsadores ((PORTB) and 0FFh), 0, a, ((PORTB) and 0FFh), 1, a, ((PORTB) and 0FFh), 2, a)
+ CONFIG_PUERTOS:
+    ; Entradas para pulsadores: ((PORTB) and 0FFh), 0, a(((PORTB) and 0FFh), 0, a), ((PORTB) and 0FFh), 1, a(((PORTB) and 0FFh), 1, a), ((PORTB) and 0FFh), 2, a(((PORTB) and 0FFh), 2, a)
     bsf TRISB, 0, c
     bsf TRISB, 1, c
     bsf TRISB, 2, c
+
+    ; Salidas: ((PORTD) and 0FFh), 0, a para LED Alarma, ((PORTD) and 0FFh), 1, a para Ventilador
+    bcf TRISD, 0, c
+    bcf TRISD, 1, c
+
+    ; Apagar salidas al inicio
+    bcf LATD, 0, c
+    bcf LATD, 1, c
     return
 
-CONFIG_INTERRUPCIONES:
+ CONFIG_INTERRUPCIONES:
+    ; 1. INTCON2: Activar pull-ups internas y flanco de bajada (al presionar)
+    bcf INTCON2, 7, c ; ((INTCON2) and 0FFh), 7, a = 0 (Pull-ups habilitadas en Puerto B)
+    bcf INTCON2, 6, c ; ((INTCON2) and 0FFh), 6, a = 0 (Flanco de bajada ((PORTB) and 0FFh), 0, a)
+    bcf INTCON2, 5, c ; ((INTCON2) and 0FFh), 5, a = 0 (Flanco de bajada ((PORTB) and 0FFh), 1, a)
+    bcf INTCON2, 4, c ; ((INTCON2) and 0FFh), 4, a = 0 (Flanco de bajada ((PORTB) and 0FFh), 2, a)
+
+    ; 2. Limpiar banderas de interrupción antes de activar
+    bcf INTCON, 1, c ; ((INTCON) and 0FFh), 1, a = 0
+    bcf INTCON3, 0, c ; ((INTCON3) and 0FFh), 0, a = 0
+    bcf INTCON3, 1, c ; ((INTCON3) and 0FFh), 1, a = 0
+
+    ; 3. Habilitar habilitadores de interrupción
+    bsf INTCON, 4, c ; ((INTCON) and 0FFh), 4, a = 1 (Habilita ((PORTB) and 0FFh), 0, a)
+    bsf INTCON3, 3, c ; ((INTCON3) and 0FFh), 3, a = 1 (Habilita ((PORTB) and 0FFh), 1, a)
+    bsf INTCON3, 4, c ; ((INTCON3) and 0FFh), 4, a = 1 (Habilita ((PORTB) and 0FFh), 2, a)
+
+    ; 4. INTCON: Habilitar interrupciones globales
+    bsf INTCON, 7, c ; ((INTCON) and 0FFh), 7, a = 1
     return
 
 CONFIG_ADC:
@@ -5498,8 +5524,34 @@ CONFIG_TIMER0:
     return
 
 ; --- RUTINA DE SERVICIO DE INTERRUPCIÓN (ISR) ---
-ISR_HIGH:
-    ; Verificar origen de interrupción (((PORTB) and 0FFh), 0, a, ((PORTB) and 0FFh), 1, a, ((PORTB) and 0FFh), 2, a, Timer0)
+ ISR_HIGH:
+    ; ¿Fue ((PORTB) and 0FFh), 0, a? (((PORTB) and 0FFh), 0, a - Alarma)
+    btfsc INTCON, 1, c
+    goto ATENDER_INT0
+
+    ; ¿Fue ((PORTB) and 0FFh), 1, a? (((PORTB) and 0FFh), 1, a - Ventilador)
+    btfsc INTCON3, 0, c
+    goto ATENDER_INT1
+
+    ; ¿Fue ((PORTB) and 0FFh), 2, a? (((PORTB) and 0FFh), 2, a - Escala °C / °F)
+    btfsc INTCON3, 1, c
+    goto ATENDER_INT2
+
+    retfie 1
+
+ATENDER_INT0:
+    btg LATD, 0, c ; Alterna estado del LED Alarma (((PORTD) and 0FFh), 0, a)
+    bcf INTCON, 1, c ; Limpia bandera ((INTCON) and 0FFh), 1, a
+    retfie 1
+
+ATENDER_INT1:
+    btg LATD, 1, c ; Alterna estado del Ventilador (((PORTD) and 0FFh), 1, a)
+    bcf INTCON3, 0, c ; Limpia bandera ((INTCON3) and 0FFh), 0, a
+    retfie 1
+
+ATENDER_INT2:
+    btg modo_pantalla, 0, c ; Alterna entre °C (0) y °F (1)
+    bcf INTCON3, 1, c ; Limpia bandera ((INTCON3) and 0FFh), 1, a
     retfie 1
 
 END resetVec
