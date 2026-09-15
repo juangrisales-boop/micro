@@ -1,0 +1,72 @@
+__S0 8000 0 ABS 0
+__S1 4 0 ABS 0
+__S3 0 0 ABS 0
+__Hudata_bank4 0 0 ABS 0
+__Ludata_bank4 0 0 ABS 0
+__Hconfig 30000E 0 CONFIG 4
+__Lconfig 0 0 CONFIG 4
+__Hudata_acs 0 0 ABS 0
+__Ludata_acs 0 0 ABS 0
+isa$xinst 0 0 ABS 0
+__HintCodeHi 0 0 ABS 0
+__LintCodeHi 0 0 ABS 0
+__Hudata_bank5 0 0 ABS 0
+__Ludata_bank5 0 0 ABS 0
+__HresetVec 0 0 ABS 0
+__LresetVec 0 0 ABS 0
+__Hcode 0 0 ABS 0
+__Lcode 0 0 ABS 0
+__Hdata 0 0 ABS 0
+__Ldata 0 0 ABS 0
+isa$std 1 0 ABS 0
+__Hudata_bank0 0 0 ABS 0
+__Ludata_bank0 0 0 ABS 0
+__Hudata_bank6 0 0 ABS 0
+__Ludata_bank6 0 0 ABS 0
+__H__absolute__ 0 0 ABS 0
+__L__absolute__ 0 0 ABS 0
+__Hedata 0 0 ABS 0
+__Ledata 0 0 ABS 0
+__Hudata 0 0 ABS 0
+__Ludata 0 0 ABS 0
+__Hudata_bank1 0 0 ABS 0
+__Ludata_bank1 0 0 ABS 0
+__Hspace_0 8000 0 ABS 0
+__Lspace_0 0 0 ABS 0
+__Hspace_1 4 0 ABS 0
+__Lspace_1 0 0 ABS 0
+__Hudata_bank7 0 0 ABS 0
+__Ludata_bank7 0 0 ABS 0
+__Hspace_3 0 0 ABS 0
+__Lspace_3 0 0 ABS 0
+__Hspace_4 60000E 0 ABS 0
+__Lspace_4 0 0 ABS 0
+__Hudata_bank2 0 0 ABS 0
+__Ludata_bank2 0 0 ABS 0
+__Hudata_bank3 0 0 ABS 0
+__Ludata_bank3 0 0 ABS 0
+%segments
+udata_acs 0 3 COMRAM 0 1
+code 7FDC 7FFF CODE 7FDC 0
+resetVec 7FD8 7FDB CODE 7FD8 0
+intCodeHi 7FD4 7FD7 CODE 7FD4 0
+%locals
+build/default/production/main.o
+main.s
+30 7FDC 0 CODE 0
+31 7FE0 0 CODE 0
+32 7FE4 0 CODE 0
+33 7FE8 0 CODE 0
+37 7FEC 0 CODE 0
+42 7FF0 0 CODE 0
+43 7FF2 0 CODE 0
+44 7FF4 0 CODE 0
+45 7FF6 0 CODE 0
+48 7FF8 0 CODE 0
+51 7FFA 0 CODE 0
+54 7FFC 0 CODE 0
+59 7FFE 0 CODE 0
+main.s
+20 7FD8 0 CODE 0
+main.s
+25 7FD4 0 CODE 0
