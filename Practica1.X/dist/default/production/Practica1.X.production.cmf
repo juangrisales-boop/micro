@@ -12,10 +12,10 @@
 # in delta units.  Any other numeric values are decimal.
 %PSECTS
 $build/default/production/main.o
-resetVec CODE 0 7F0E 7F0E 4 1 2
-code CODE 0 7F12 7F12 EE 1 2
+resetVec CODE 0 7F00 7F00 4 1 2
+code CODE 0 7F04 7F04 FC 1 2
 udata_acs COMRAM 1 0 0 5 1 1
-intCodeHi CODE 0 7F0A 7F0A 4 1 2
+intCodeHi CODE 0 7EFC 7EFC 4 1 2
 config CONFIG 4 300000 300000 E 1 1
 # %UNUSED Section
 # This section enumerates the unused ranges of each CLASS. Each entry
@@ -33,15 +33,15 @@ BANK4 400-4FF 1
 BANK5 500-5FF 1
 BANK6 600-6FF 1
 BANK7 700-7FF 1
-CONST 0-7F09 1
+CONST 0-7EFB 1
 IDLOC 200000-200007 1
-SMALLCONST 800-7F09 1
-CODE 0-7F09 1
+SMALLCONST 800-7EFB 1
+CODE 0-7EFB 1
 BIGRAM 0-7FF 1
 BIGSFR F60-FFF 1
 COMRAM 5-5F 1
 EEDATA F00000-F000FF 1
-MEDIUMCONST 800-7F09 1
+MEDIUMCONST 800-7EFB 1
 # %LINETAB Section
 # This section enumerates the file/line to address mappings.
 # The beginning of the section is indicated by %LINETAB.
@@ -56,110 +56,117 @@ MEDIUMCONST 800-7F09 1
 # All other numeric values are in decimal.
 %LINETAB
 $build/default/production/main.o
-7F0A intCodeHi CODE >26:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F0E resetVec CODE >21:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F12 code CODE >31:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F16 code CODE >32:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F1A code CODE >33:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F1E code CODE >34:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F22 code CODE >37:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F26 code CODE >38:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F2A code CODE >39:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F2E code CODE >43:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F30 code CODE >44:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F32 code CODE >45:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F34 code CODE >46:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F36 code CODE >47:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F38 code CODE >48:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F3A code CODE >49:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F3C code CODE >50:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F3E code CODE >51:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F40 code CODE >52:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F42 code CODE >53:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F44 code CODE >54:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F46 code CODE >59:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F48 code CODE >60:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F4A code CODE >61:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F4C code CODE >62:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F4E code CODE >65:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F50 code CODE >66:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F52 code CODE >67:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F54 code CODE >68:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F56 code CODE >69:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F58 code CODE >72:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F5A code CODE >73:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F5C code CODE >74:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F5E code CODE >75:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F60 code CODE >77:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F62 code CODE >78:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F64 code CODE >79:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F66 code CODE >81:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F68 code CODE >82:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F6A code CODE >83:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F6C code CODE >84:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F6E code CODE >85:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F70 code CODE >88:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F72 code CODE >89:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F74 code CODE >90:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F76 code CODE >91:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F78 code CODE >92:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F7A code CODE >93:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F7C code CODE >94:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F7E code CODE >97:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F80 code CODE >98:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F82 code CODE >99:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F84 code CODE >100:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F86 code CODE >101:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F88 code CODE >102:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F8A code CODE >103:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F8C code CODE >108:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F8E code CODE >109:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F92 code CODE >111:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F94 code CODE >112:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F98 code CODE >115:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F9A code CODE >119:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F9C code CODE >121:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7F9E code CODE >122:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FA0 code CODE >123:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FA4 code CODE >124:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FA6 code CODE >125:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FAA code CODE >127:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FAC code CODE >128:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FAE code CODE >129:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FB0 code CODE >133:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FB2 code CODE >134:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FB4 code CODE >135:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FB8 code CODE >136:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FBA code CODE >137:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FBC code CODE >140:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FBE code CODE >141:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FC0 code CODE >142:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FC4 code CODE >143:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FC6 code CODE >144:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FC8 code CODE >145:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FCA code CODE >149:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FCC code CODE >150:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FD0 code CODE >152:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FD2 code CODE >153:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FD6 code CODE >155:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FD8 code CODE >156:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FDC code CODE >158:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FDE code CODE >159:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FE2 code CODE >161:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FE4 code CODE >164:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FE6 code CODE >165:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FE8 code CODE >166:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FEA code CODE >169:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FEC code CODE >170:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FEE code CODE >171:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FF0 code CODE >174:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FF2 code CODE >175:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FF4 code CODE >176:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FF6 code CODE >179:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FF8 code CODE >180:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FFA code CODE >181:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FFC code CODE >182:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
-7FFE code CODE >183:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7EFC intCodeHi CODE >26:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F00 resetVec CODE >21:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F04 code CODE >31:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F08 code CODE >32:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F0C code CODE >33:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F10 code CODE >34:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F14 code CODE >37:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F18 code CODE >38:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F1C code CODE >39:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F20 code CODE >43:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F22 code CODE >44:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F24 code CODE >45:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F26 code CODE >46:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F28 code CODE >47:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F2A code CODE >48:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F2C code CODE >49:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F2E code CODE >50:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F30 code CODE >51:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F32 code CODE >52:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F34 code CODE >53:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F36 code CODE >54:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F38 code CODE >59:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F3A code CODE >60:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F3C code CODE >61:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F3E code CODE >62:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F40 code CODE >65:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F42 code CODE >66:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F44 code CODE >67:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F46 code CODE >68:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F48 code CODE >69:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F4A code CODE >72:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F4C code CODE >73:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F4E code CODE >74:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F50 code CODE >75:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F52 code CODE >77:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F54 code CODE >78:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F56 code CODE >79:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F58 code CODE >81:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F5A code CODE >82:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F5C code CODE >83:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F5E code CODE >84:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F60 code CODE >85:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F62 code CODE >88:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F64 code CODE >89:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F66 code CODE >90:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F68 code CODE >91:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F6A code CODE >92:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F6C code CODE >93:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F6E code CODE >94:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F70 code CODE >97:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F72 code CODE >98:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F74 code CODE >99:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F76 code CODE >100:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F78 code CODE >101:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F7A code CODE >102:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F7C code CODE >103:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F7E code CODE >108:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F80 code CODE >109:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F84 code CODE >111:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F86 code CODE >112:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F8A code CODE >115:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F8C code CODE >119:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F8E code CODE >121:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F90 code CODE >122:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F92 code CODE >123:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F96 code CODE >124:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F98 code CODE >125:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F9C code CODE >127:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7F9E code CODE >128:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FA0 code CODE >129:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FA2 code CODE >133:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FA4 code CODE >134:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FA6 code CODE >135:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FAA code CODE >136:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FAC code CODE >137:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FAE code CODE >140:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FB0 code CODE >141:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FB2 code CODE >142:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FB6 code CODE >143:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FB8 code CODE >144:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FBA code CODE >145:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FBC code CODE >149:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FBE code CODE >150:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FC2 code CODE >152:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FC4 code CODE >153:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FC8 code CODE >155:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FCA code CODE >156:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FCE code CODE >158:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FD0 code CODE >159:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FD4 code CODE >161:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FD6 code CODE >164:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FD8 code CODE >165:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FDA code CODE >166:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FDC code CODE >169:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FDE code CODE >170:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FE0 code CODE >171:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FE2 code CODE >174:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FE4 code CODE >175:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FE6 code CODE >176:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FE8 code CODE >179:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FEA code CODE >180:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FEC code CODE >181:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FEE code CODE >182:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FF0 code CODE >185:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FF2 code CODE >186:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FF4 code CODE >187:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FF6 code CODE >190:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FF8 code CODE >191:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FFA code CODE >192:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FFC code CODE >193:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
+7FFE code CODE >195:C:\Users\juang\OneDrive\Escritorio\github\micro\Practica1.X\main.s
 # %SYMTAB Section
 # An enumeration of all symbols in the program.
 # The beginning of the section is indicated by %SYMTAB.
@@ -243,10 +250,10 @@ __Ludata_acs 0 0 ABS 0 udata_acs -
 # and size are in units of delta. The file address is in units of bytes.
 # All other numeric quantities are in decimal.
 %SEGMENTS
-resetVec 0 7F0E 7F0E 4 1
-code 0 7F12 7F12 EE 1
+resetVec 0 7F00 7F00 4 1
+code 0 7F04 7F04 FC 1
 udata_acs 1 0 0 5 1
-intCodeHi 0 7F0A 7F0A 4 1
+intCodeHi 0 7EFC 7EFC 4 1
 # %NOTES Section
 # This section contains data of all the note-psects.  The beginning of the section
 # is indicated by %NOTES. The first line indicates the name and decimal

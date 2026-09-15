@@ -175,11 +175,23 @@ ATENDER_INT2:
     bcf     INTCON3, 1, c
     retfie  1
 
-ATENDER_TIMER0:
-    bcf     INTCON, 2, c
-    bsf     ADCON0, 1, c        ; Inicia ADC
+ ATENDER_TIMER0:
+    bcf     INTCON, 2, c        ; Limpia bandera TMR0IF
+    bsf     ADCON0, 1, c        ; Inicia conversión del ADC
     movf    ADRESH, w, c
-    movwf   temp_celsius, c     ; Guarda resultado en temp_celsius
+    movwf   temp_celsius, c     ; Guarda lectura en °C
+    
+    ; Conversión aprox a Fahrenheit: °F = (°C * 2) + 32
+    rlncf   WREG, w, c          ; Multiplica °C por 2
+    addlw   32                  ; Suma 32
+    movwf   temp_fahrenheit, c
+
+    ; Alerta automática: Si Temp >= 35°C activa el Ventilador (RD1)
+    movlw   35
+    subwf   temp_celsius, w, c
+    btfsc   STATUS, 0, c        ; ¿Es mayor o igual a 35°C?
+    bsf     LATD, 1, c          ; Enciende el ventilador automáticamente
+
     retfie  1
 
 END resetVec
