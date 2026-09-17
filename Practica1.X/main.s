@@ -180,29 +180,25 @@ FIN_BCD:
     return
 
 MULTIPLEXAR_DISPLAYS:
-    ; Apagar ambos displays (Blanking anti-flicker)
-    bcf     LATC, 0, c
-    bcf     LATC, 1, c
-
     ; Display 1 (Decenas - RC0)
+    bcf     LATC, 1, c
     movf    decenas, w, c
     call    TABLA_7SEG
     movwf   LATD, c
     bsf     LATC, 0, c
     call    DELAY_DISPLAYS
-    bcf     LATC, 0, c
 
     ; Display 2 (Unidades - RC1)
+    bcf     LATC, 0, c
     movf    unidades, w, c
     call    TABLA_7SEG
     movwf   LATD, c
     bsf     LATC, 1, c
     call    DELAY_DISPLAYS
-    bcf     LATC, 1, c
     return
 
 DELAY_DISPLAYS:
-    movlw   8
+    movlw   10
     movwf   delay_cnt1, c
 LOOP_OUTER:
     movlw   100
@@ -231,21 +227,21 @@ ISR_HIGH:
 
 ATENDER_INT0:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 0, c          ; Confirmar presión en GND
-    btg     LATC, 2, c           ; Toggle Alarma / Buzzer
+    btfss   PORTB, 0, c          ; Confirmar que el botón sigue presionado en GND
+    btg     LATC, 2, c           ; Toggle Alarma (RC2)
     bcf     INTCON, 1, c
     retfie
 
 ATENDER_INT1:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 1, c          ; Confirmar presión en GND
-    btg     LATC, 6, c           ; Toggle Ventilador
+    btfss   PORTB, 1, c          ; Confirmar que el botón sigue presionado en GND
+    btg     LATC, 6, c           ; Toggle Ventilador (RC6)
     bcf     INTCON3, 0, c
     retfie
 
 ATENDER_INT2:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 2, c          ; Confirmar presión en GND
+    btfss   PORTB, 2, c          ; Confirmar que el botón sigue presionado en GND
     btg     modo_pantalla, 0, c  ; Alternar °C / °F
     bcf     INTCON3, 1, c
     retfie
@@ -257,10 +253,10 @@ ATENDER_TIMER0:
     bcf     STATUS, 0, c
     rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
-    movwf   temp_celsius, c     ; Lectura directa de °C a 5V
+    movwf   temp_celsius, c
     call    CALCULAR_FAHRENHEIT
 
-    ; Encendido automático del ventilador al superar 35°C
+    ; Encendido automático de ventilador si supera 35°C
     movlw   35
     subwf   temp_celsius, w, c
     btfsc   STATUS, 0, c
