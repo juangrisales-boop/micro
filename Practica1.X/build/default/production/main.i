@@ -5459,7 +5459,9 @@ temp_fahrenheit: DS 1
 modo_pantalla: DS 1
 decenas: DS 1
 unidades: DS 1
-delay_cnt: DS 1
+delay_cnt1: DS 1
+delay_cnt2: DS 1
+temp_div: DS 1
 
 ; --- VECTORES DE INTERRUPCIÓN Y RESET ABSOLUTOS ---
 psect resetVec, class=CODE, delta=1, abs
@@ -5496,17 +5498,17 @@ MAIN:
     call CONFIG_ADC
     call CONFIG_TIMER0
 
-    ; Lectura inicial
+    ; Lectura inicial ADC
     bsf ADCON0, 1, c
 ESPERAR_ADC_INIT:
     btfsc ADCON0, 1, c
     goto ESPERAR_ADC_INIT
 
-    ; Lectura 10-bits dividida entre 2 (Resolución exactitud 1°C)
     bcf STATUS, 0, c
     rrcf ADRESH, w, c
     rrcf ADRESL, w, c
     movwf temp_celsius, c
+    call CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
     call CALCULAR_DIGITOS
@@ -5540,11 +5542,19 @@ CONFIG_PUERTOS:
     return
 
 CONFIG_INTERRUPCIONES:
-    bcf INTCON2, 7, c ; Pull-ups en Puerto B
+    bcf INTCON2, 7, c ; Activar Pull-ups internos de PORTB
+
+    ; Detección por Flanco de BAJADA
+    bcf INTCON2, 6, c ; ((INTCON2) and 0FFh), 6, a = 0
+    bcf INTCON2, 5, c ; ((INTCON2) and 0FFh), 5, a = 0
+    bcf INTCON2, 4, c ; ((INTCON2) and 0FFh), 4, a = 0
+
+    ; Limpiar banderas
     bcf INTCON, 1, c
     bcf INTCON3, 0, c
     bcf INTCON3, 1, c
 
+    ; Habilitar Interrupciones Externas
     bsf INTCON, 4, c ; ((PORTB) and 0FFh), 0, a
     bsf INTCON3, 3, c ; ((PORTB) and 0FFh), 1, a
     bsf INTCON3, 4, c ; ((PORTB) and 0FFh), 2, a
@@ -5566,6 +5576,26 @@ CONFIG_TIMER0:
     clrf TMR0L, c
     bcf INTCON, 2, c
     bsf INTCON, 5, c ; Habilitar Int Timer0
+    return
+
+CALCULAR_FAHRENHEIT:
+    movf temp_celsius, w, c
+    rlncf WREG, w, c
+    rlncf WREG, w, c ; WREG = C * 4
+
+    clrf temp_div, c
+DIV_LOOP:
+    addlw -5
+    btfss STATUS, 0, c
+    goto FIN_DIV
+    incf temp_div, f, c
+    goto DIV_LOOP
+
+FIN_DIV:
+    movf temp_celsius, w, c
+    addwf temp_div, w, c ; C + (4*C)/5
+    addlw 32 ; + 32
+    movwf temp_fahrenheit, c
     return
 
 CALCULAR_DIGITOS:
@@ -5600,7 +5630,7 @@ MULTIPLEXAR_DISPLAYS:
     call TABLA_7SEG
     movwf LATD, c
     bsf LATC, 0, c
-    call DELAY_RAPIDO
+    call DELAY_DISPLAYS
 
     ; Display 2 (Unidades - ((PORTC) and 0FFh), 1, a)
     bcf LATC, 0, c
@@ -5608,15 +5638,20 @@ MULTIPLEXAR_DISPLAYS:
     call TABLA_7SEG
     movwf LATD, c
     bsf LATC, 1, c
-    call DELAY_RAPIDO
+    call DELAY_DISPLAYS
     return
 
-DELAY_RAPIDO:
-    movlw 15 ; Retardo ultra liviano para evitar saturar Proteus
-    movwf delay_cnt, c
-DELAY_LOOP:
-    decfsz delay_cnt, f, c
-    goto DELAY_LOOP
+DELAY_DISPLAYS:
+    movlw 10
+    movwf delay_cnt1, c
+LOOP_OUTER:
+    movlw 100
+    movwf delay_cnt2, c
+LOOP_INNER:
+    decfsz delay_cnt2, f, c
+    goto LOOP_INNER
+    decfsz delay_cnt1, f, c
+    goto LOOP_OUTER
     return
 
 ISR_HIGH:
@@ -5632,44 +5667,59 @@ ISR_HIGH:
     btfsc INTCON, 2, c
     goto ATENDER_TIMER0
 
-    retfie 1
+    retfie
 
 ATENDER_INT0:
-    btg LATC, 2, c ; LED Alarma (((PORTC) and 0FFh), 2, a)
+    call DELAY_DEBOUNCE
+    btfss PORTB, 0, c ; Confirmar que el botón sigue presionado en GND
+    btg LATC, 2, c ; Toggle Alarma (((PORTC) and 0FFh), 2, a)
     bcf INTCON, 1, c
-    retfie 1
+    retfie
 
 ATENDER_INT1:
-    btg LATC, 6, c ; LED Ventilador (((PORTC) and 0FFh), 6, a)
+    call DELAY_DEBOUNCE
+    btfss PORTB, 1, c ; Confirmar que el botón sigue presionado en GND
+    btg LATC, 6, c ; Toggle Ventilador (((PORTC) and 0FFh), 6, a)
     bcf INTCON3, 0, c
-    retfie 1
+    retfie
 
 ATENDER_INT2:
+    call DELAY_DEBOUNCE
+    btfss PORTB, 2, c ; Confirmar que el botón sigue presionado en GND
     btg modo_pantalla, 0, c ; Alternar °C / °F
     bcf INTCON3, 1, c
-    retfie 1
+    retfie
 
 ATENDER_TIMER0:
     bcf INTCON, 2, c
 
-    ; Conversión de 10 bits dividida por 2 = °C exactos
+    ; Lectura ADC
     bcf STATUS, 0, c
     rrcf ADRESH, w, c
     rrcf ADRESL, w, c
     movwf temp_celsius, c
+    call CALCULAR_FAHRENHEIT
 
-    ; Fahrenheit = (Celsius * 2) + 32
-    rlncf WREG, w, c
-    addlw 32
-    movwf temp_fahrenheit, c
-
-    ; Control de ventilador (>35°C)
+    ; Encendido automático de ventilador si supera 35°C
     movlw 35
     subwf temp_celsius, w, c
     btfsc STATUS, 0, c
     bsf LATC, 6, c
 
-    bsf ADCON0, 1, c ; Iniciar nueva conversión
-    retfie 1
+    bsf ADCON0, 1, c ; Iniciar nueva conversión ADC
+    retfie
+
+DELAY_DEBOUNCE:
+    movlw 80
+    movwf delay_cnt1, c
+D_L1:
+    movlw 100
+    movwf delay_cnt2, c
+D_L2:
+    decfsz delay_cnt2, f, c
+    goto D_L2
+    decfsz delay_cnt1, f, c
+    goto D_L1
+    return
 
 END resetVec
