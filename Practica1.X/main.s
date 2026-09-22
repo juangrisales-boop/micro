@@ -244,28 +244,28 @@ ISR_HIGH:
     btfsc   INTCON, 2, c       ; ¿Ocurrió el desbordamiento del Timer0?
     goto    ATENDER_TIMER0
 
-    retfie                     ; Retorna de la interrupción si fue una fuente no esperada
+    retfie 1                    ; Retorna de la interrupción si fue una fuente no esperada
 
 ATENDER_INT0:
     call    DELAY_DEBOUNCE     ; Filtra rebotes mecánicos del botón
     btfss   PORTB, 0, c        ; Verifica si el botón sigue presionado en cero lógico (GND)
     btg     LATC, 2, c         ; Alterna el estado de la salida de Alarma (RC2)
     bcf     INTCON, 1, c       ; Limpia la bandera de interrupción INT0IF
-    retfie
+    retfie 1
 
 ATENDER_INT1:
     call    DELAY_DEBOUNCE     ; Filtra rebotes mecánicos del botón
     btfss   PORTB, 1, c        ; Verifica si el botón sigue presionado en GND
     btg     LATC, 6, c         ; Alterna manualmente el estado del Ventilador (RC6)
     bcf     INTCON3, 0, c      ; Limpia la bandera de interrupción INT1IF
-    retfie
+    retfie 1
 
 ATENDER_INT2:
     call    DELAY_DEBOUNCE     ; Filtra rebotes mecánicos del botón
     btfss   PORTB, 2, c        ; Verifica si el botón sigue presionado en GND
     btg     modo_pantalla, 0, c ; Cambia la bandera entre mostrar Celsius (0) y Fahrenheit (1)
     bcf     INTCON3, 1, c      ; Limpia la bandera de interrupción INT2IF
-    retfie
+    retfie 1
 
 ATENDER_TIMER0:
     bcf     INTCON, 2, c       ; Limpia la bandera de desbordamiento TMR0IF
@@ -296,7 +296,7 @@ COMPROBAR_APAGADO:
 
 FIN_CONTROL_VENT:
     bsf     ADCON0, 1, c       ; Inicia una nueva conversión ADC para el próximo ciclo
-    retfie
+    retfie 1
 
 ; --- RUTINA DE RETARDILLO PARA ANTIRREBOTE DE BOTONES (DEBOUNCE OPTIMIZADO) ---
 DELAY_DEBOUNCE:
