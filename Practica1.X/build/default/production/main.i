@@ -5508,6 +5508,7 @@ ESPERAR_ADC_INIT:
     rrcf ADRESH, w, c
     rrcf ADRESL, w, c
     movwf temp_celsius, c
+    rlncf temp_celsius, f, c ; Multiplicar x2 para obtener °C reales
     call CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -5624,32 +5625,28 @@ FIN_BCD:
     return
 
 MULTIPLEXAR_DISPLAYS:
-    ; Apagar ambos displays (Blanking anti-flicker)
-    bcf LATC, 0, c
-    bcf LATC, 1, c
-
     ; Display 1 (Decenas - ((PORTC) and 0FFh), 0, a)
+    bcf LATC, 1, c
     movf decenas, w, c
     call TABLA_7SEG
     movwf LATD, c
     bsf LATC, 0, c
     call DELAY_DISPLAYS
-    bcf LATC, 0, c
 
     ; Display 2 (Unidades - ((PORTC) and 0FFh), 1, a)
+    bcf LATC, 0, c
     movf unidades, w, c
     call TABLA_7SEG
     movwf LATD, c
     bsf LATC, 1, c
     call DELAY_DISPLAYS
-    bcf LATC, 1, c
     return
 
 DELAY_DISPLAYS:
-    movlw 8
+    movlw 5
     movwf delay_cnt1, c
 LOOP_OUTER:
-    movlw 100
+    movlw 60
     movwf delay_cnt2, c
 LOOP_INNER:
     decfsz delay_cnt2, f, c
@@ -5701,7 +5698,8 @@ ATENDER_TIMER0:
     bcf STATUS, 0, c
     rrcf ADRESH, w, c
     rrcf ADRESL, w, c
-    movwf temp_celsius, c ; Lectura directa de °C a 5V
+    movwf temp_celsius, c
+    rlncf temp_celsius, f, c ; Multiplicar x2 para corregir escala de temperatura
     call CALCULAR_FAHRENHEIT
 
     ; Encendido automático del ventilador al superar 35°C
