@@ -227,21 +227,21 @@ ISR_HIGH:
 
 ATENDER_INT0:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 0, c          ; Confirmar que el botón sigue presionado en GND
+    btfss   PORTB, 0, c          ; Confirmar botón en GND
     btg     LATC, 2, c           ; Toggle Alarma (RC2)
     bcf     INTCON, 1, c
     retfie
 
 ATENDER_INT1:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 1, c          ; Confirmar que el botón sigue presionado en GND
+    btfss   PORTB, 1, c          ; Confirmar botón en GND
     btg     LATC, 6, c           ; Toggle Ventilador (RC6)
     bcf     INTCON3, 0, c
     retfie
 
 ATENDER_INT2:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 2, c          ; Confirmar que el botón sigue presionado en GND
+    btfss   PORTB, 2, c          ; Confirmar botón en GND
     btg     modo_pantalla, 0, c  ; Alternar °C / °F
     bcf     INTCON3, 1, c
     retfie
@@ -256,20 +256,33 @@ ATENDER_TIMER0:
     movwf   temp_celsius, c
     call    CALCULAR_FAHRENHEIT
 
-    ; Encendido automático de ventilador si supera 35°C
+    ; --- CONTROL DE VENTILADOR CON HISTÉRESIS (ON >= 35°C, OFF < 33°C) ---
+    btfsc   LATC, 6, c           ; ¿El ventilador ya está encendido?
+    goto    COMPROBAR_APAGADO
+
+COMPROBAR_ENCENDIDO:
     movlw   35
     subwf   temp_celsius, w, c
-    btfsc   STATUS, 0, c
-    bsf     LATC, 6, c
+    btfsc   STATUS, 0, c         ; Si temp >= 35
+    bsf     LATC, 6, c           ; Encender ventilador
+    goto    FIN_CONTROL_VENT
 
-    bsf     ADCON0, 1, c        ; Iniciar nueva conversión ADC
+COMPROBAR_APAGADO:
+    movlw   33
+    subwf   temp_celsius, w, c
+    btfss   STATUS, 0, c         ; Si temp < 33
+    bcf     LATC, 6, c           ; Apagar ventilador
+
+FIN_CONTROL_VENT:
+    bsf     ADCON0, 1, c         ; Iniciar nueva conversión ADC
     retfie
 
+; --- OPTIMIZACIÓN DE ANTIRREBOTE PARA EVITAR PARPADEO EN DISPLAYS ---
 DELAY_DEBOUNCE:
-    movlw   80
+    movlw   15
     movwf   delay_cnt1, c
 D_L1:
-    movlw   100
+    movlw   50
     movwf   delay_cnt2, c
 D_L2:
     decfsz  delay_cnt2, f, c
