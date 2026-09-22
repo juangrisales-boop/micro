@@ -279,3 +279,7 @@ D_L2:
     return
 
 END resetVec
+
+git add .
+git commit -m "..."
+git push origin main
