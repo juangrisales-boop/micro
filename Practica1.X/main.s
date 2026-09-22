@@ -64,6 +64,7 @@ ESPERAR_ADC_INIT:
     rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
     movwf   temp_celsius, c
+    rlncf   temp_celsius, f, c  ; Multiplicar x2 para obtener °C reales
     call    CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -198,10 +199,10 @@ MULTIPLEXAR_DISPLAYS:
     return
 
 DELAY_DISPLAYS:
-    movlw   10
+    movlw   5
     movwf   delay_cnt1, c
 LOOP_OUTER:
-    movlw   100
+    movlw   60
     movwf   delay_cnt2, c
 LOOP_INNER:
     decfsz  delay_cnt2, f, c
@@ -227,21 +228,21 @@ ISR_HIGH:
 
 ATENDER_INT0:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 0, c          ; Confirmar que el botón sigue presionado en GND
-    btg     LATC, 2, c           ; Toggle Alarma (RC2)
+    btfss   PORTB, 0, c          ; Confirmar presión en GND
+    btg     LATC, 2, c           ; Toggle Alarma / Buzzer
     bcf     INTCON, 1, c
     retfie
 
 ATENDER_INT1:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 1, c          ; Confirmar que el botón sigue presionado en GND
-    btg     LATC, 6, c           ; Toggle Ventilador (RC6)
+    btfss   PORTB, 1, c          ; Confirmar presión en GND
+    btg     LATC, 6, c           ; Toggle Ventilador
     bcf     INTCON3, 0, c
     retfie
 
 ATENDER_INT2:
     call    DELAY_DEBOUNCE
-    btfss   PORTB, 2, c          ; Confirmar que el botón sigue presionado en GND
+    btfss   PORTB, 2, c          ; Confirmar presión en GND
     btg     modo_pantalla, 0, c  ; Alternar °C / °F
     bcf     INTCON3, 1, c
     retfie
@@ -254,9 +255,10 @@ ATENDER_TIMER0:
     rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
     movwf   temp_celsius, c
+    rlncf   temp_celsius, f, c  ; Multiplicar x2 para corregir escala de temperatura
     call    CALCULAR_FAHRENHEIT
 
-    ; Encendido automático de ventilador si supera 35°C
+    ; Encendido automático del ventilador al superar 35°C
     movlw   35
     subwf   temp_celsius, w, c
     btfsc   STATUS, 0, c
