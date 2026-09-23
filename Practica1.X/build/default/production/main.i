@@ -5459,7 +5459,8 @@ temp_fahrenheit: DS 1
 contador_muestreo: DS 1
 estado_umbral: DS 1
 modo_pantalla: DS 1
-bloqueo_botones: DS 1 ; <-- NUEVO: Registro antirrebote mecánico
+bloqueo_botones: DS 1
+contador_rebote: DS 1 ; Temporizador estricto para botones (Antirrebote)
 decenas: DS 1
 unidades: DS 1
 delay_cnt1: DS 1
@@ -5505,6 +5506,8 @@ MAIN:
     clrf modo_pantalla, c
     clrf estado_umbral, c
     clrf bloqueo_botones, c
+    clrf contador_rebote, c
+
     movlw 1
     movwf contador_muestreo, c
 
@@ -5514,10 +5517,9 @@ ESPERAR_ADC_INIT:
     btfsc ADCON0, 1, c
     goto ESPERAR_ADC_INIT
 
-    ; Lectura segura de 10 bits fusionada
-    bcf STATUS, 0, c
-    rrcf ADRESH, w, c ; El bit 0 de ADRESH pasa al Carry
-    rrcf ADRESL, w, c ; El Carry entra a ADRESL, dividiendo entre 2 de forma perfecta
+    ; Lectura analógica inicial
+    bcf STATUS, 0, c ; Limpiar Carry obligatoriamente antes de rotar
+    rrcf ADRESL, w, c ; Dividir por 2 limpiamente para obtener °C
     movwf temp_celsius, c
     call CALCULAR_FAHRENHEIT
 
@@ -5540,33 +5542,33 @@ TABLA_7SEG:
     return
 
 CONFIG_PUERTOS:
-    bsf TRISB, 0, c
-    bsf TRISB, 1, c
-    bsf TRISB, 2, c
-    bsf TRISA, 0, c
+    bsf TRISB, 0, c ; ((PORTB) and 0FFh), 0, a (((PORTB) and 0FFh), 0, a - Alarma)
+    bsf TRISB, 1, c ; ((PORTB) and 0FFh), 1, a (((PORTB) and 0FFh), 1, a - Ventilador)
+    bsf TRISB, 2, c ; ((PORTB) and 0FFh), 2, a (((PORTB) and 0FFh), 2, a - C/F)
+    bsf TRISA, 0, c ; ((PORTA) and 0FFh), 0, a Entrada LM35
 
-    clrf TRISC, c
-    clrf TRISD, c
+    clrf TRISC, c ; PORTC Salidas
+    clrf TRISD, c ; PORTD Salidas para 7SEG
     clrf LATC, c
     clrf LATD, c
     return
 
 CONFIG_INTERRUPCIONES:
-    bcf INTCON2, 7, c ; Pull-ups internos PORTB
+    bcf INTCON2, 7, c ; Activar Pull-ups internos PORTB
 
-    ; Flanco de bajada
+    ; Flanco de bajada para los botones
     bcf INTCON2, 6, c
     bcf INTCON2, 5, c
     bcf INTCON2, 4, c
 
-    bcf INTCON, 1, c
+    bcf INTCON, 1, c ; Limpiar banderas
     bcf INTCON3, 0, c
     bcf INTCON3, 1, c
 
-    bsf INTCON, 4, c ; ((PORTB) and 0FFh), 0, a
-    bsf INTCON3, 3, c ; ((PORTB) and 0FFh), 1, a
-    bsf INTCON3, 4, c ; ((PORTB) and 0FFh), 2, a
-    bsf INTCON, 7, c ; ((INTCON) and 0FFh), 7, a
+    bsf INTCON, 4, c ; Habilitar ((PORTB) and 0FFh), 0, a
+    bsf INTCON3, 3, c ; Habilitar ((PORTB) and 0FFh), 1, a
+    bsf INTCON3, 4, c ; Habilitar ((PORTB) and 0FFh), 2, a
+    bsf INTCON, 7, c ; Habilitar Globales
     return
 
 CONFIG_ADC:
@@ -5574,7 +5576,7 @@ CONFIG_ADC:
     movwf ADCON1, c
     movlw 0b10101010 ; Justificación DERECHA
     movwf ADCON2, c
-    movlw 0b00000001
+    movlw 0b00000001 ; Activar módulo ADC
     movwf ADCON0, c
     return
 
@@ -5583,7 +5585,7 @@ CONFIG_TIMER0:
     movwf T0CON, c
     clrf TMR0L, c
     bcf INTCON, 2, c
-    bsf INTCON, 5, c
+    bsf INTCON, 5, c ; Habilitar interrupción de Timer0
     return
 
 CALCULAR_FAHRENHEIT:
@@ -5686,49 +5688,57 @@ ISR_HIGH:
     goto ATENDER_TIMER0
     retfie
 
-; --- RUTINAS DE INTERRUPCIÓN BLINDADAS CON ANTIRREBOTE ---
+; --- ANTIRREBOTE DE BOTONES 100% ESTABLE ---
 ATENDER_INT0:
     bcf INTCON, 1, c
-    btfsc bloqueo_botones, 0, c ; Si el botón 0 está en cooldown, ignorar
+    btfsc bloqueo_botones, 0, c
     retfie
-    btg LATC, 2, c ; Toggle Alarma
-    bsf bloqueo_botones, 0, c ; Activar cooldown
+    btg LATC, 2, c
+    bsf bloqueo_botones, 0, c
+    movlw 8 ; Activar bloqueo por ~250ms
+    movwf contador_rebote, c
     retfie
 
 ATENDER_INT1:
     bcf INTCON3, 0, c
-    btfsc bloqueo_botones, 1, c ; Si el botón 1 está en cooldown, ignorar
+    btfsc bloqueo_botones, 1, c
     retfie
-    btg LATC, 6, c ; Toggle Ventilador
-    bsf bloqueo_botones, 1, c ; Activar cooldown
+    btg LATC, 6, c
+    bsf bloqueo_botones, 1, c
+    movlw 8
+    movwf contador_rebote, c
     retfie
 
 ATENDER_INT2:
     bcf INTCON3, 1, c
-    btfsc bloqueo_botones, 2, c ; Si el botón 2 está en cooldown, ignorar
+    btfsc bloqueo_botones, 2, c
     retfie
-    btg modo_pantalla, 0, c ; Cambiar °C / °F
-    bsf bloqueo_botones, 2, c ; Activar cooldown
+    btg modo_pantalla, 0, c
+    bsf bloqueo_botones, 2, c
+    movlw 8
+    movwf contador_rebote, c
     retfie
 
 ATENDER_TIMER0:
     bcf INTCON, 2, c
 
-    ; --- LIBERACIÓN DEL ANTIRREBOTE ---
-    ; Como Timer0 ocurre cada ~32ms, este es el tiempo perfecto para
-    ; borrar el cooldown de todos los botones y permitir nuevas presiones limpias.
-    clrf bloqueo_botones, c
+    ; --- LÓGICA DE LIBERACIÓN DE BOTONES ---
+    movf contador_rebote, w, c
+    bz VERIFICAR_MUESTREO ; Si ya es 0, no restar
+    decfsz contador_rebote, f, c ; Restar 1 al contador
+    goto VERIFICAR_MUESTREO ; Si no ha llegado a 0, continuar
+    clrf bloqueo_botones, c ; Si llegó a 0, liberar todos los botones
 
-    ; --- TEMPORIZADOR DE ESTABILIZACIÓN (~500ms) ---
+VERIFICAR_MUESTREO:
+    ; --- TEMPORIZADOR DE ESTABILIZACIÓN ADC (~500ms) ---
     decfsz contador_muestreo, f, c
     retfie
 
     movlw 16
     movwf contador_muestreo, c
 
-    ; --- LECTURA ANALÓGICA REFORZADA A 10 BITS ---
-    bcf STATUS, 0, c
-    rrcf ADRESH, w, c
+    ; --- LECTURA ANALÓGICA ---
+    bcf STATUS, 0, c ; IMPORTANTE: Limpiar acarreo antes de rotar
     rrcf ADRESL, w, c
     movwf temp_celsius, c
     call CALCULAR_FAHRENHEIT
