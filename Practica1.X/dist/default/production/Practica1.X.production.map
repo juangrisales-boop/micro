@@ -6,7 +6,7 @@ Linker command line:
   --edf=C:\Program Files\Microchip\xc8\v3.10\pic\dat\20250813170317_en.msgs \
   -cs -h+dist/default/production\Practica1.X.production.sym \
   --cmf=dist/default/production\Practica1.X.production.cmf -z -Q18F4550 \
-  -oC:\Users\juang\AppData\Local\Temp\xcAs118c.0\driver_tmp_3.o \
+  -oC:\Users\juang\AppData\Local\Temp\xcAs18o.0\driver_tmp_3.o \
   --fixupoverflow=error -ver=XC8 PIC(R) Assembler --fixupoverflow=lstwarn \
   -Mdist/default/production/Practica1.X.production.map -E1 \
   -ACODE=00h-07h,0Ch-07FFFh -ACONST=00h-07h,0Ch-07FFFh \
@@ -29,14 +29,14 @@ build/default/production/main.o
                 config                           300000   300000        E        0       4
                 intCodeHi                             0        0        C        0       0
                 resetVec                              0        0        4        0       0
-                code                               7E5E     7E5E      1A2     3F2F       0
-                udata_acs                             0        0        A        0       1
+                code                               7E44     7E44      1BC     3F22       0
+                udata_acs                             0        0        B        0       1
 
 TOTAL           Name                               Link     Load   Length     Space
         CLASS   CODE           
                 intCodeHi                             0        0        C         0
                 resetVec                              0        0        4         0
-                code                               7E5E     7E5E      1A2         0
+                code                               7E44     7E44      1BC         0
 
         CLASS   CONST          
 
@@ -45,7 +45,7 @@ TOTAL           Name                               Link     Load   Length     Sp
         CLASS   MEDIUMCONST    
 
         CLASS   COMRAM         
-                udata_acs                             0        0        A         1
+                udata_acs                             0        0        B         1
 
         CLASS   ABS1           
 
@@ -84,8 +84,8 @@ TOTAL           Name                               Link     Load   Length     Sp
 
 SEGMENTS        Name                           Load    Length   Top    Selector   Space  Class
 
-                udata_acs                      000000  00000A  00000A         0       1  COMRAM  
-                code                           007E5E  0001A2  008000      3F2F       0  CODE    
+                udata_acs                      000000  00000B  00000B         0       1  COMRAM  
+                code                           007E44  0001BC  008000      3F22       0  CODE    
 
 
 UNUSED ADDRESS RANGES
@@ -101,15 +101,15 @@ UNUSED ADDRESS RANGES
         BANK7            000700-0007FF              100
         BIGRAM           00000C-0007FF              7F4
         BIGSFR           000F60-000FFF               A0
-        CODE             00000C-007E5D             7E52
-        COMRAM           00000A-00005F               56
-        CONST            00000C-007E5D             7E52
+        CODE             00000C-007E43             7E38
+        COMRAM           00000B-00005F               55
+        CONST            00000C-007E43             7E38
         EEDATA           F00000-F000FF              100
         IDLOC            200000-200007                8
-        MEDIUMCONST      000800-007E5D             765E
+        MEDIUMCONST      000800-007E43             7644
         RAM              000060-0007FF              100
         SFR              000F60-000FFF               A0
-        SMALLCONST       000800-007E5D              100
+        SMALLCONST       000800-007E43              100
 
                                   Symbol Table
 
@@ -117,7 +117,7 @@ __H__absolute__ __absolute__ 000000  __Hcode         code         000000
 __Hconfig       config       30000E  __Hdata         data         000000
 __Hedata        edata        000000  __HintCodeHi    intCodeHi    000000
 __HresetVec     resetVec     000000  __Hspace_0      (abs)        008000
-__Hspace_1      (abs)        00000A  __Hspace_3      (abs)        000000
+__Hspace_1      (abs)        00000B  __Hspace_3      (abs)        000000
 __Hspace_4      (abs)        60000E  __Hudata        udata        000000
 __Hudata_acs    udata_acs    000000  __Hudata_bank0  udata_bank0  000000
 __Hudata_bank1  udata_bank1  000000  __Hudata_bank2  udata_bank2  000000
@@ -134,6 +134,6 @@ __Ludata_bank0  udata_bank0  000000  __Ludata_bank1  udata_bank1  000000
 __Ludata_bank2  udata_bank2  000000  __Ludata_bank3  udata_bank3  000000
 __Ludata_bank4  udata_bank4  000000  __Ludata_bank5  udata_bank5  000000
 __Ludata_bank6  udata_bank6  000000  __Ludata_bank7  udata_bank7  000000
-__S0            (abs)        008000  __S1            (abs)        00000A
+__S0            (abs)        008000  __S1            (abs)        00000B
 __S3            (abs)        000000  isa$std         (abs)        000001
 isa$xinst       (abs)        000000  
