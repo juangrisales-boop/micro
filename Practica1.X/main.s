@@ -258,7 +258,7 @@ ATENDER_TIMER0:
     rlncf   temp_celsius, f, c  ; Multiplicar x2 para corregir escala de temperatura
     call    CALCULAR_FAHRENHEIT
 
-    ; Encendido automático del ventilador al superar 35°C
+    ; Encendido automático del ventilador al superar 35°C ggggg
     movlw   35
     subwf   temp_celsius, w, c
     btfsc   STATUS, 0, c
