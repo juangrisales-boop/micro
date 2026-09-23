@@ -5517,9 +5517,10 @@ ESPERAR_ADC_INIT:
     btfsc ADCON0, 1, c
     goto ESPERAR_ADC_INIT
 
-    ; Lectura analógica inicial (Pura, sin calibración de software)
+    ; --- LECTURA REAL DE 10 BITS (ADRESH:ADRESL) DIVIDIDO ENTRE 2 ---
     bcf STATUS, 0, c
-    rrcf ADRESL, w, c
+    rrcf ADRESH, f, c ; Desplaza el bit bajo de ADRESH al Carry
+    rrcf ADRESL, w, c ; Mueve el Carry a ADRESL y divide todo entre 2
     movwf temp_celsius, c
 
     call CALCULAR_FAHRENHEIT
@@ -5737,9 +5738,10 @@ VERIFICAR_MUESTREO:
     movlw 16
     movwf contador_muestreo, c
 
-    ; --- LECTURA ANALÓGICA PURA ---
+    ; --- LECTURA REAL DE 10 BITS (ADRESH:ADRESL) DIVIDIDO ENTRE 2 ---
     bcf STATUS, 0, c
-    rrcf ADRESL, w, c
+    rrcf ADRESH, f, c ; Desplaza el bit bajo de ADRESH al Carry
+    rrcf ADRESL, w, c ; Mueve el Carry a ADRESL y divide todo entre 2
     movwf temp_celsius, c
 
     call CALCULAR_FAHRENHEIT
