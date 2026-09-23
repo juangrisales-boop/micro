@@ -5445,8 +5445,8 @@ ENDM
 # 6 "C:\\Program Files\\Microchip\\xc8\\v3.10\\pic\\include/xc.inc" 2 3
 # 3 "main.s" 2
 
-; --- CONFIGURACIÓN DE FUSIBLES COMPATIBLES ---
-config FOSC = INTOSC_EC
+; --- CONFIGURACIÓN DE FUSIBLES ---
+config FOSC = INTOSC_EC ; Oscilador interno 8MHz
 config WDT = OFF
 config LVP = OFF
 config PBADEN = OFF
@@ -5461,6 +5461,7 @@ decenas: DS 1
 unidades: DS 1
 delay_cnt1: DS 1
 delay_cnt2: DS 1
+temp_div: DS 1
 
 ; --- VECTORES DE INTERRUPCIÓN Y RESET ABSOLUTOS ---
 psect resetVec, class=CODE, delta=1, abs
@@ -5473,24 +5474,21 @@ org 0x0008
 intCodeHi:
     goto ISR_HIGH
 
-; --- CÓDIGO PRINCIPAL Y TABLAS ---
+; --- CÓDIGO PRINCIPAL Y TABLA ---
 psect code, class=CODE, delta=1, reloc=2
 
-; Tabla 7 Segmentos Cátodo Común mediante salto relativo directo (Garantiza lectura exacta)
-TABLA_7SEG:
-    andlw 0x0F
-    rlncf WREG, w, c ; W = W * 2 (Cada instrucción retlw ocupa 2 bytes)
-    addwf PCL, f, c ; Salto directo en la tabla
-    retlw 0b00111111 ; 0
-    retlw 0b00000110 ; 1
-    retlw 0b01011011 ; 2
-    retlw 0b01001111 ; 3
-    retlw 0b01100110 ; 4
-    retlw 0b01101101 ; 5
-    retlw 0b01111101 ; 6
-    retlw 0b00000111 ; 7
-    retlw 0b01111111 ; 8
-    retlw 0b01101111 ; 9
+; Tabla 7 Segmentos Cátodo Común en Flash
+TABLA_7SEG_DATA:
+    db 0b00111111 ; 0
+    db 0b00000110 ; 1
+    db 0b01011011 ; 2
+    db 0b01001111 ; 3
+    db 0b01100110 ; 4
+    db 0b01101101 ; 5
+    db 0b01111101 ; 6
+    db 0b00000111 ; 7
+    db 0b01111111 ; 8
+    db 0b01101111 ; 9
 
 MAIN:
     movlw 0b01110000 ; Oscilador interno a 8 MHz
@@ -5510,8 +5508,7 @@ ESPERAR_ADC_INIT:
     goto ESPERAR_ADC_INIT
 
     bcf STATUS, 0, c
-    rrcf ADRESH, w, c
-    rrcf ADRESL, w, c
+    rrcf ADRESL, w, c ; ADC / 2 = Grados Celsius directos
     movwf temp_celsius, c
     call CALCULAR_FAHRENHEIT
 
@@ -5519,6 +5516,21 @@ MAIN_LOOP:
     call CALCULAR_DIGITOS
     call MULTIPLEXAR_DISPLAYS
     goto MAIN_LOOP
+
+; Subrutina segura de lectura de tabla usando TBLPTR para PIC18
+TABLA_7SEG:
+    andlw 0x0F
+    movwf TBLPTRL, c
+    movlw low(TABLA_7SEG_DATA)
+    addwf TBLPTRL, f, c
+    movlw high(TABLA_7SEG_DATA)
+    movwf TBLPTRH, c
+    btfsc STATUS, 0, c
+    incf TBLPTRH, f, c
+    clrf TBLPTRU, c
+    tblrd*
+    movf TABLAT, w, c
+    return
 
 CONFIG_PUERTOS:
     bsf TRISB, 0, c ; ((PORTB) and 0FFh), 0, a (((PORTB) and 0FFh), 0, a), ((PORTB) and 0FFh), 1, a (((PORTB) and 0FFh), 1, a), ((PORTB) and 0FFh), 2, a (((PORTB) and 0FFh), 2, a)
@@ -5533,14 +5545,14 @@ CONFIG_PUERTOS:
     return
 
 CONFIG_INTERRUPCIONES:
-    bcf INTCON2, 7, c ; Pull-ups internos PORTB
+    bcf INTCON2, 7, c ; Activar Pull-ups internos PORTB
 
-    ; Flanco de bajada
+    ; Flanco de bajada para pulsadores a GND
     bcf INTCON2, 6, c ; ((INTCON2) and 0FFh), 6, a = 0
     bcf INTCON2, 5, c ; ((INTCON2) and 0FFh), 5, a = 0
     bcf INTCON2, 4, c ; ((INTCON2) and 0FFh), 4, a = 0
 
-    ; Limpiar banderas
+    ; Limpiar banderas de interrupción
     bcf INTCON, 1, c
     bcf INTCON3, 0, c
     bcf INTCON3, 1, c
@@ -5574,16 +5586,16 @@ CALCULAR_FAHRENHEIT:
     mullw 9 ; PRODL = temp_celsius * 9
     movf PRODL, w, c
 
-    clrf delay_cnt1, c ; Usado como cociente temporal
+    clrf temp_div, c ; Cociente temporal
 DIV_5:
     addlw -5
     btfss STATUS, 0, c
     goto FIN_DIV_5
-    incf delay_cnt1, f, c
+    incf temp_div, f, c
     goto DIV_5
 
 FIN_DIV_5:
-    movf delay_cnt1, w, c
+    movf temp_div, w, c
     addlw 32
     movwf temp_fahrenheit, c
     return
@@ -5614,7 +5626,7 @@ FIN_BCD:
     return
 
 MULTIPLEXAR_DISPLAYS:
-    ; Apagar ambos displays primero (Blanking)
+    ; Apagar ambos displays (Blanking)
     bcf LATC, 0, c
     bcf LATC, 1, c
 
@@ -5664,26 +5676,31 @@ ISR_HIGH:
     retfie
 
 ATENDER_INT0:
-    btg LATC, 2, c ; Toggle Alarma LED (((PORTB) and 0FFh), 0, a)
     bcf INTCON, 1, c
+    btg LATC, 2, c ; Toggle Alarma / LED (Pin ((PORTC) and 0FFh), 2, a)
     retfie
 
 ATENDER_INT1:
-    btg LATC, 6, c ; Toggle Ventilador Manual (((PORTB) and 0FFh), 1, a)
     bcf INTCON3, 0, c
+    btg LATC, 6, c ; Toggle Ventilador Manual (Pin ((PORTC) and 0FFh), 6, a)
     retfie
 
 ATENDER_INT2:
-    btg modo_pantalla, 0, c ; Toggle °C / °F (((PORTB) and 0FFh), 2, a)
     bcf INTCON3, 1, c
+    btg modo_pantalla, 0, c ; Toggle °C / °F
     retfie
 
 ATENDER_TIMER0:
     bcf INTCON, 2, c ; Limpiar bandera Timer0
 
-    ; Obtener lectura completa del ADC
+    ; Conversión del ADC en segundo plano
+    bsf ADCON0, 1, c
+WAIT_ADC:
+    btfsc ADCON0, 1, c
+    goto WAIT_ADC
+
+    ; Lectura directa
     bcf STATUS, 0, c
-    rrcf ADRESH, w, c
     rrcf ADRESL, w, c
     movwf temp_celsius, c
     call CALCULAR_FAHRENHEIT
@@ -5692,9 +5709,8 @@ ATENDER_TIMER0:
     movlw 35
     subwf temp_celsius, w, c
     btfsc STATUS, 0, c
-    bsf LATC, 6, c
+    bsf LATC, 6, c ; Enciende automáticamente el ventilador si T >= 35°C
 
-    bsf ADCON0, 1, c ; Iniciar nueva conversión ADC
     retfie
 
 END resetVec
