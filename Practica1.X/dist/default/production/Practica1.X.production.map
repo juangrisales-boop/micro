@@ -6,7 +6,7 @@ Linker command line:
   --edf=C:\Program Files\Microchip\xc8\v3.10\pic\dat\20250813170317_en.msgs \
   -cs -h+dist/default/production\Practica1.X.production.sym \
   --cmf=dist/default/production\Practica1.X.production.cmf -z -Q18F4550 \
-  -oC:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o \
+  -oC:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o \
   --fixupoverflow=error -ver=XC8 PIC(R) Assembler --fixupoverflow=lstwarn \
   -Mdist/default/production/Practica1.X.production.map -E1 \
   -ACODE=00h-07h,0Ch-07FFFh -ACONST=00h-07h,0Ch-07FFFh \
@@ -29,14 +29,14 @@ build/default/production/main.o
                 config                           300000   300000        E        0       4
                 intCodeHi                             0        0        C        0       0
                 resetVec                              0        0        4        0       0
-                code                               7E18     7E18      1E8     3F0C       0
+                code                               7E30     7E30      1D0     3F18       0
                 udata_acs                             0        0        C        0       1
 
 TOTAL           Name                               Link     Load   Length     Space
         CLASS   CODE           
                 intCodeHi                             0        0        C         0
                 resetVec                              0        0        4         0
-                code                               7E18     7E18      1E8         0
+                code                               7E30     7E30      1D0         0
 
         CLASS   CONST          
 
@@ -85,7 +85,7 @@ TOTAL           Name                               Link     Load   Length     Sp
 SEGMENTS        Name                           Load    Length   Top    Selector   Space  Class
 
                 udata_acs                      000000  00000C  00000C         0       1  COMRAM  
-                code                           007E18  0001E8  008000      3F0C       0  CODE    
+                code                           007E30  0001D0  008000      3F18       0  CODE    
 
 
 UNUSED ADDRESS RANGES
@@ -101,15 +101,15 @@ UNUSED ADDRESS RANGES
         BANK7            000700-0007FF              100
         BIGRAM           00000C-0007FF              7F4
         BIGSFR           000F60-000FFF               A0
-        CODE             00000C-007E17             7E0C
+        CODE             00000C-007E2F             7E24
         COMRAM           00000C-00005F               54
-        CONST            00000C-007E17             7E0C
+        CONST            00000C-007E2F             7E24
         EEDATA           F00000-F000FF              100
         IDLOC            200000-200007                8
-        MEDIUMCONST      000800-007E17             7618
+        MEDIUMCONST      000800-007E2F             7630
         RAM              000060-0007FF              100
         SFR              000F60-000FFF               A0
-        SMALLCONST       000800-007E17              100
+        SMALLCONST       000800-007E2F              100
 
                                   Symbol Table
 

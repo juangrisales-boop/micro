@@ -73,15 +73,10 @@ ESPERAR_ADC_INIT:
     btfsc   ADCON0, 1, c
     goto    ESPERAR_ADC_INIT
     
-    ; Lectura analógica inicial
+    ; Lectura analógica inicial (Pura, sin calibración de software)
     bcf     STATUS, 0, c
     rrcf    ADRESL, w, c
     movwf   temp_celsius, c
-    
-    ; --- CALIBRACIÓN DE OFFSET (AJUSTE DE TIERRA PROTOBOARD) ---
-    movlw   7                    ; Ajuste de 7 grados
-    cpfslt  temp_celsius, c      ; Si la temp es menor a 7, no restar
-    subwf   temp_celsius, f, c   ; temp_celsius = temp_celsius - 7
     
     call    CALCULAR_FAHRENHEIT
 
@@ -250,11 +245,9 @@ ISR_HIGH:
     goto    ATENDER_TIMER0
     retfie
 
-; --- INTERRUPCIONES CON FILTRO ANTI-EMI ---
+; --- INTERRUPCIONES DE BOTONES DIRECTAS Y CON ANTIRREBOTE ---
 ATENDER_INT0:
     bcf     INTCON, 1, c
-    btfsc   PORTB, 0, c            ; Verificar que siga presionado (Filtro Ruido)
-    retfie
     btfsc   bloqueo_botones, 0, c  
     retfie
     btg     LATC, 2, c             
@@ -265,8 +258,6 @@ ATENDER_INT0:
 
 ATENDER_INT1:
     bcf     INTCON3, 0, c
-    btfsc   PORTB, 1, c            ; <-- FILTRO EMI CRÍTICO PARA EL MOTOR
-    retfie
     btfsc   bloqueo_botones, 1, c  
     retfie
     btg     LATC, 6, c             
@@ -277,8 +268,6 @@ ATENDER_INT1:
 
 ATENDER_INT2:
     bcf     INTCON3, 1, c
-    btfsc   PORTB, 2, c            ; Filtro ruido C/F
-    retfie
     btfsc   bloqueo_botones, 2, c  
     retfie
     btg     modo_pantalla, 0, c    
@@ -304,16 +293,11 @@ VERIFICAR_MUESTREO:
     movlw   16                   
     movwf   contador_muestreo, c
 
-    ; --- LECTURA ANALÓGICA CON CALIBRACIÓN ---
+    ; --- LECTURA ANALÓGICA PURA ---
     bcf     STATUS, 0, c         
     rrcf    ADRESL, w, c         
     movwf   temp_celsius, c
     
-    ; Resta el desfase de tierra
-    movlw   7
-    cpfslt  temp_celsius, c
-    subwf   temp_celsius, f, c
-
     call    CALCULAR_FAHRENHEIT
 
     ; --- CONTROL DE VENTILADOR CON HISTÉRESIS ---

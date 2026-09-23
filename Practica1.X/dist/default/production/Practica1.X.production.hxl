@@ -1,7 +1,7 @@
 ### HEXMate logfile and output summary ###
 
 ### Command-line arguments ###
- C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o
+ C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o
  -Odist/default/production\Practica1.X.production.hex
  -logfile=dist/default/production\Practica1.X.production.hxl
  -addressing=1
@@ -9,15 +9,15 @@
 
 ### Memory Usage ###
  Input file ranges:
-  0h - 3h		(C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o)
-  8h - Bh		(C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o)
-  7E18h - 7FFFh		(C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o)
-  300000h - 300003h		(C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o)
-  300005h - 300006h		(C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o)
-  300008h - 30000Dh		(C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o)
+  0h - 3h		(C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o)
+  8h - Bh		(C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o)
+  7E30h - 7FFFh		(C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o)
+  300000h - 300003h		(C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o)
+  300005h - 300006h		(C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o)
+  300008h - 30000Dh		(C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o)
  Unused ranges:
   4h - 7h
-  Ch - 7E17h
+  Ch - 7E2Fh
   8000h - 2FFFFFh
   300004h - 300004h
   300007h - 300007h
@@ -25,14 +25,12 @@
 ### Hex Memory Map ###
  Legend:
   -- = Unused memory
-  H1 = Input file             (C:\Users\juang\AppData\Local\Temp\xcAskc0.0\driver_tmp_3.o)
+  H1 = Input file             (C:\Users\juang\AppData\Local\Temp\xcAswg0.0\driver_tmp_3.o)
 ----------------------------------------------------------
          | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 ----------------------------------------------------------
 00000000 | H1 H1 H1 H1 -- -- -- -- H1 H1 H1 H1 -- -- -- --
 ----------------------------------------------------------
-00007E10 | -- -- -- -- -- -- -- -- H1 H1 H1 H1 H1 H1 H1 H1
-00007E20 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00007E30 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00007E40 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
 00007E50 | H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1 H1
