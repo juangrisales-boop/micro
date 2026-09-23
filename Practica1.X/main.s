@@ -63,8 +63,7 @@ ESPERAR_ADC_INIT:
     bcf     STATUS, 0, c
     rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
-    movwf   temp_celsius, c
-    rlncf   temp_celsius, f, c  ; Multiplicar x2 para obtener °C reales
+    movwf   temp_celsius, c ; Lectura directa en °C (sin multiplicar x2)
     call    CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -181,28 +180,32 @@ FIN_BCD:
     return
 
 MULTIPLEXAR_DISPLAYS:
-    ; Display 1 (Decenas - RC0)
+    ; Apagar ambos displays primero (Anti-parpadeo / Blanking)
+    bcf     LATC, 0, c
     bcf     LATC, 1, c
+
+    ; Display 1 (Decenas - RC0)
     movf    decenas, w, c
     call    TABLA_7SEG
     movwf   LATD, c
     bsf     LATC, 0, c
     call    DELAY_DISPLAYS
+    bcf     LATC, 0, c
 
     ; Display 2 (Unidades - RC1)
-    bcf     LATC, 0, c
     movf    unidades, w, c
     call    TABLA_7SEG
     movwf   LATD, c
     bsf     LATC, 1, c
     call    DELAY_DISPLAYS
+    bcf     LATC, 1, c
     return
 
 DELAY_DISPLAYS:
-    movlw   5
+    movlw   8
     movwf   delay_cnt1, c
 LOOP_OUTER:
-    movlw   60
+    movlw   100
     movwf   delay_cnt2, c
 LOOP_INNER:
     decfsz  delay_cnt2, f, c
@@ -229,7 +232,7 @@ ISR_HIGH:
 ATENDER_INT0:
     call    DELAY_DEBOUNCE
     btfss   PORTB, 0, c          ; Confirmar presión en GND
-    btg     LATC, 2, c           ; Toggle Alarma / Buzzer
+    btg     LATC, 2, c           ; Toggle Alarma / LED
     bcf     INTCON, 1, c
     retfie
 
@@ -250,15 +253,14 @@ ATENDER_INT2:
 ATENDER_TIMER0:
     bcf     INTCON, 2, c
     
-    ; Lectura ADC
+    ; Lectura ADC directa en °C
     bcf     STATUS, 0, c
     rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
-    movwf   temp_celsius, c
-    rlncf   temp_celsius, f, c  ; Multiplicar x2 para corregir escala de temperatura
+    movwf   temp_celsius, c     ; Lectura correcta sin rlncf
     call    CALCULAR_FAHRENHEIT
 
-    ; Encendido automático del ventilador al superar 35°C ggggg
+    ; Encendido automático del ventilador al superar 35°C
     movlw   35
     subwf   temp_celsius, w, c
     btfsc   STATUS, 0, c
