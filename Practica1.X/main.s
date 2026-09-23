@@ -33,7 +33,6 @@ intCodeHi:
 ; --- CÓDIGO PRINCIPAL Y TABLA ---
 psect code, class=CODE, delta=1, reloc=2
 
-; Tabla 7 Segmentos Cátodo Común en Flash
 TABLA_7SEG_DATA:
     db 0b00111111  ; 0
     db 0b00000110  ; 1
@@ -55,17 +54,17 @@ MAIN:
     call    CONFIG_ADC
     call    CONFIG_TIMER0
 
-    clrf    modo_pantalla, c
-
-    ; Lectura inicial del sensor ADC
+    ; Lectura inicial ADC
     bsf     ADCON0, 1, c
 ESPERAR_ADC_INIT:
     btfsc   ADCON0, 1, c
     goto    ESPERAR_ADC_INIT
     
     bcf     STATUS, 0, c
-    rrcf    ADRESL, w, c    ; ADC / 2 = Grados Celsius directos
+    rrcf    ADRESH, w, c
+    rrcf    ADRESL, w, c
     movwf   temp_celsius, c
+    rlncf   temp_celsius, f, c  ; Multiplicar x2 para obtener °C reales
     call    CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -73,7 +72,6 @@ MAIN_LOOP:
     call    MULTIPLEXAR_DISPLAYS
     goto    MAIN_LOOP
 
-; Subrutina segura de lectura de tabla usando TBLPTR para PIC18
 TABLA_7SEG:
     andlw   0x0F
     movwf   TBLPTRL, c
@@ -89,31 +87,31 @@ TABLA_7SEG:
     return
 
 CONFIG_PUERTOS:
-    bsf     TRISB, 0, c  ; RB0 (INT0), RB1 (INT1), RB2 (INT2)
+    bsf     TRISB, 0, c  ; RB0, RB1, RB2 Entradas
     bsf     TRISB, 1, c
     bsf     TRISB, 2, c
     bsf     TRISA, 0, c  ; RA0 Entrada LM35
 
-    clrf    TRISC, c     ; PORTC Salidas (RC0: Decenas, RC1: Unidades, RC2: LED, RC6: Ventilador)
+    clrf    TRISC, c     ; PORTC Salidas
     clrf    TRISD, c     ; PORTD Salidas para 7SEG
     clrf    LATC, c
     clrf    LATD, c
     return
 
 CONFIG_INTERRUPCIONES:
-    bcf     INTCON2, 7, c  ; Activar Pull-ups internos PORTB
+    bcf     INTCON2, 7, c  ; Activar Pull-ups internos de PORTB
     
-    ; Flanco de bajada para pulsadores a GND
+    ; Detección por Flanco de BAJADA
     bcf     INTCON2, 6, c  ; INTEDG0 = 0
     bcf     INTCON2, 5, c  ; INTEDG1 = 0
     bcf     INTCON2, 4, c  ; INTEDG2 = 0
 
-    ; Limpiar banderas de interrupción
+    ; Limpiar banderas
     bcf     INTCON, 1, c
     bcf     INTCON3, 0, c
     bcf     INTCON3, 1, c
 
-    ; Habilitar Interrupciones Externas y Globales
+    ; Habilitar Interrupciones Externas
     bsf     INTCON, 4, c   ; INT0
     bsf     INTCON3, 3, c  ; INT1
     bsf     INTCON3, 4, c  ; INT2
@@ -139,20 +137,21 @@ CONFIG_TIMER0:
 
 CALCULAR_FAHRENHEIT:
     movf    temp_celsius, w, c
-    mullw   9               ; PRODL = temp_celsius * 9
-    movf    PRODL, w, c
+    rlncf   WREG, w, c       
+    rlncf   WREG, w, c       ; WREG = C * 4
     
-    clrf    temp_div, c     ; Cociente temporal
-DIV_5:
-    addlw   -5
-    btfss   STATUS, 0, c
-    goto    FIN_DIV_5
-    incf    temp_div, f, c
-    goto    DIV_5
+    clrf    temp_div, c
+DIV_LOOP:
+    addlw   -5              
+    btfss   STATUS, 0, c    
+    goto    FIN_DIV
+    incf    temp_div, f, c  
+    goto    DIV_LOOP
 
-FIN_DIV_5:
-    movf    temp_div, w, c
-    addlw   32
+FIN_DIV:
+    movf    temp_celsius, w, c
+    addwf   temp_div, w, c   ; C + (4*C)/5
+    addlw   32               ; + 32
     movwf   temp_fahrenheit, c
     return
 
@@ -182,38 +181,34 @@ FIN_BCD:
     return
 
 MULTIPLEXAR_DISPLAYS:
-    ; Apagar ambos displays (Blanking)
-    bcf     LATC, 0, c
-    bcf     LATC, 1, c
-
     ; Display 1 (Decenas - RC0)
+    bcf     LATC, 1, c
     movf    decenas, w, c
     call    TABLA_7SEG
     movwf   LATD, c
     bsf     LATC, 0, c
     call    DELAY_DISPLAYS
-    bcf     LATC, 0, c
 
     ; Display 2 (Unidades - RC1)
+    bcf     LATC, 0, c
     movf    unidades, w, c
     call    TABLA_7SEG
     movwf   LATD, c
     bsf     LATC, 1, c
     call    DELAY_DISPLAYS
-    bcf     LATC, 1, c
     return
 
 DELAY_DISPLAYS:
-    movlw   6
+    movlw   5
     movwf   delay_cnt1, c
-L_OUTER:
-    movlw   80
+LOOP_OUTER:
+    movlw   60
     movwf   delay_cnt2, c
-L_INNER:
+LOOP_INNER:
     decfsz  delay_cnt2, f, c
-    goto    L_INNER
+    goto    LOOP_INNER
     decfsz  delay_cnt1, f, c
-    goto    L_OUTER
+    goto    LOOP_OUTER
     return
 
 ISR_HIGH:
@@ -232,41 +227,57 @@ ISR_HIGH:
     retfie
 
 ATENDER_INT0:
+    call    DELAY_DEBOUNCE
+    btfss   PORTB, 0, c          ; Confirmar presión en GND
+    btg     LATC, 2, c           ; Toggle Alarma / Buzzer
     bcf     INTCON, 1, c
-    btg     LATC, 2, c           ; Toggle Alarma / LED (Pin RC2)
     retfie
 
 ATENDER_INT1:
+    call    DELAY_DEBOUNCE
+    btfss   PORTB, 1, c          ; Confirmar presión en GND
+    btg     LATC, 6, c           ; Toggle Ventilador
     bcf     INTCON3, 0, c
-    btg     LATC, 6, c           ; Toggle Ventilador Manual (Pin RC6)
     retfie
 
 ATENDER_INT2:
+    call    DELAY_DEBOUNCE
+    btfss   PORTB, 2, c          ; Confirmar presión en GND
+    btg     modo_pantalla, 0, c  ; Alternar °C / °F
     bcf     INTCON3, 1, c
-    btg     modo_pantalla, 0, c  ; Toggle °C / °F
     retfie
 
 ATENDER_TIMER0:
-    bcf     INTCON, 2, c         ; Limpiar bandera Timer0
+    bcf     INTCON, 2, c
     
-    ; Conversión del ADC en segundo plano
-    bsf     ADCON0, 1, c
-WAIT_ADC:
-    btfsc   ADCON0, 1, c
-    goto    WAIT_ADC
-
-    ; Lectura directa
+    ; Lectura ADC
     bcf     STATUS, 0, c
+    rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
     movwf   temp_celsius, c
+    rlncf   temp_celsius, f, c  ; Multiplicar x2 para corregir escala de temperatura
     call    CALCULAR_FAHRENHEIT
 
-    ; Encendido automático por alta temperatura (>= 35°C)
+    ; Encendido automático del ventilador al superar 35°C
     movlw   35
     subwf   temp_celsius, w, c
     btfsc   STATUS, 0, c
-    bsf     LATC, 6, c           ; Enciende automáticamente el ventilador si T >= 35°C
+    bsf     LATC, 6, c
 
+    bsf     ADCON0, 1, c        ; Iniciar nueva conversión ADC
     retfie
+
+DELAY_DEBOUNCE:
+    movlw   80
+    movwf   delay_cnt1, c
+D_L1:
+    movlw   100
+    movwf   delay_cnt2, c
+D_L2:
+    decfsz  delay_cnt2, f, c
+    goto    D_L2
+    decfsz  delay_cnt1, f, c
+    goto    D_L1
+    return
 
 END resetVec
