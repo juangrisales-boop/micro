@@ -5456,7 +5456,8 @@ config MCLRE = ON
 psect udata_acs
 temp_celsius: DS 1
 temp_fahrenheit: DS 1
-temp_anterior: DS 1 ; Para detectar transiciones del ventilador
+contador_muestreo: DS 1 ; Retardo para estabilizar lectura LM35
+estado_umbral: DS 1 ; Histéresis del ventilador
 modo_pantalla: DS 1
 decenas: DS 1
 unidades: DS 1
@@ -5501,7 +5502,9 @@ MAIN:
     call CONFIG_TIMER0
 
     clrf modo_pantalla, c
-    clrf temp_anterior, c
+    clrf estado_umbral, c
+    movlw 1
+    movwf contador_muestreo, c ; Inicializar muestreo
 
     ; Lectura inicial ADC (LM35 en ((PORTA) and 0FFh), 0, a)
     bsf ADCON0, 1, c
@@ -5509,11 +5512,10 @@ ESPERAR_ADC_INIT:
     btfsc ADCON0, 1, c
     goto ESPERAR_ADC_INIT
 
-    ; Lectura limpia: ADRESL / 2 da directamente los °C
+    ; Lectura limpia
     bcf STATUS, 0, c
     rrcf ADRESL, w, c
     movwf temp_celsius, c
-    movwf temp_anterior, c
     call CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -5555,22 +5557,20 @@ CONFIG_INTERRUPCIONES:
     bcf INTCON2, 5, c ; ((INTCON2) and 0FFh), 5, a = 0
     bcf INTCON2, 4, c ; ((INTCON2) and 0FFh), 4, a = 0
 
-    ; Limpiar banderas
-    bcf INTCON, 1, c
+    bcf INTCON, 1, c ; Limpiar banderas
     bcf INTCON3, 0, c
     bcf INTCON3, 1, c
 
-    ; Habilitar Interrupciones Externas y Globales
-    bsf INTCON, 4, c ; ((PORTB) and 0FFh), 0, a
-    bsf INTCON3, 3, c ; ((PORTB) and 0FFh), 1, a
-    bsf INTCON3, 4, c ; ((PORTB) and 0FFh), 2, a
-    bsf INTCON, 7, c ; ((INTCON) and 0FFh), 7, a
+    bsf INTCON, 4, c ; Habilitar ((PORTB) and 0FFh), 0, a
+    bsf INTCON3, 3, c ; Habilitar ((PORTB) and 0FFh), 1, a
+    bsf INTCON3, 4, c ; Habilitar ((PORTB) and 0FFh), 2, a
+    bsf INTCON, 7, c ; Habilitar ((INTCON) and 0FFh), 7, a
     return
 
 CONFIG_ADC:
     movlw 0b00001110 ; ((PORTA) and 0FFh), 0, a analógico
     movwf ADCON1, c
-    movlw 0b10101010 ; Justificación DERECHA (10 bits), 12 TAD, Fosc/32
+    movlw 0b10101010 ; Justificación DERECHA, 12 TAD, Fosc/32
     movwf ADCON2, c
     movlw 0b00000001 ; Activar ADC
     movwf ADCON0, c
@@ -5584,11 +5584,11 @@ CONFIG_TIMER0:
     bsf INTCON, 5, c ; Habilitar Int Timer0
     return
 
-; Fórmula: F = (C * 9 / 5) + 32 (Con prevención de overflow 16 bits)
+; Fórmula: F = (C * 9 / 5) + 32 (Mult. Hardware 16 bits sin desbordes)
 CALCULAR_FAHRENHEIT:
     movf temp_celsius, w, c
-    mullw 9 ; PRODH:PRODL = C * 9
-    clrf temp_div, c ; Limpiar el cociente
+    mullw 9
+    clrf temp_div, c
 
 DIV_16_BITS:
     movf PRODH, w, c
@@ -5623,29 +5623,25 @@ USAR_FAHRENHEIT:
 
 SEPARAR_DEC_UNI:
     movwf unidades, c
-
-    ; --- PROTECCIÓN CONTRA DESBORDAMIENTO (>99) ---
-    movlw 100
-    subwf unidades, w, c
-    btfss STATUS, 0, c ; ¿El valor es >= 100?
-    goto INICIAR_BCD
-    movlw 99 ; Si es >= 100, truncar en 99
-    movwf unidades, c
-
-INICIAR_BCD:
     clrf decenas, c
 
 BUCLE_DEC:
     movlw 10
     subwf unidades, w, c
     btfss STATUS, 0, c
-    goto FIN_BCD
+    goto MODULO_DECENAS
     movwf unidades, c
     incf decenas, f, c
     goto BUCLE_DEC
 
-FIN_BCD:
-    return
+MODULO_DECENAS:
+    ; Si decenas supera 9 (ej. T > 100°F), extraer solo el dígito derecho
+    movlw 10
+    subwf decenas, w, c
+    btfss STATUS, 0, c
+    return ; Si es menor a 10, está listo
+    movwf decenas, c ; Restar 10 y repetir
+    goto MODULO_DECENAS
 
 MULTIPLEXAR_DISPLAYS:
     bcf LATC, 0, c
@@ -5698,7 +5694,7 @@ ISR_HIGH:
 
 ATENDER_INT0:
     bcf INTCON, 1, c
-    btg LATC, 2, c ; Toggle Alarma LED (Pin ((PORTC) and 0FFh), 2, a)
+    btg LATC, 2, c ; Toggle Alarma LED (Pin ((PORTC) and 0FFh), 2, a) - INTACTO
     retfie
 
 ATENDER_INT1:
@@ -5714,42 +5710,46 @@ ATENDER_INT2:
 ATENDER_TIMER0:
     bcf INTCON, 2, c ; Limpiar bandera Timer0
 
-    ; Guardar estado anterior
-    movff temp_celsius, temp_anterior
+    ; --- TEMPORIZADOR DE ESTABILIZACIÓN (~500ms) ---
+    decfsz contador_muestreo, f, c
+    retfie ; Salir si no ha pasado el medio segundo
 
-    ; Lectura analógica en segundo plano
+    movlw 16 ; 16 interrupciones x 32ms = ~512ms
+    movwf contador_muestreo, c
+
+    ; --- LECTURA ANALÓGICA ---
     bcf STATUS, 0, c
-    rrcf ADRESL, w, c ; Valor en °C directo
+    rrcf ADRESL, w, c ; Valor en °C (aprox)
     movwf temp_celsius, c
     call CALCULAR_FAHRENHEIT
 
-    ; --- CONTROL INTELIGENTE DE VENTILADOR (((RCON) and 0FFh), 1, a TRANSICIÓN) ---
-    ; Verifica si ANTES era < 35
-    movlw 35
-    subwf temp_anterior, w, c
-    btfsc STATUS, 0, c
-    goto REVISAR_BAJADA ; Si ya era >= 35, vamos a ver si bajó
+    ; --- CONTROL DE VENTILADOR CON HISTÉRESIS (INMUNE AL RUIDO) ---
+    btfsc estado_umbral, 0, c
+    goto REVISAR_BAJADA ; Si ya está en Alta Temperatura, revisa si baja
 
-    ; Si antes era < 35, verificamos si AHORA es >= 35
+REVISAR_SUBIDA:
+    ; Está frío. ¿Llegó a 35°C?
     movlw 35
     subwf temp_celsius, w, c
     btfss STATUS, 0, c
-    goto FIN_TIMER0_ADC ; No cruzó hacia arriba, ignorar
+    goto FIN_TIMER0_ADC ; No llegó a 35, salir
 
-    bsf LATC, 6, c ; ¡Cruzó hacia arriba! Encendido automático
+    bsf estado_umbral, 0, c ; Cambiar estado lógico a Caliente
+    bsf LATC, 6, c ; Encender ventilador automáticamente
     goto FIN_TIMER0_ADC
 
 REVISAR_BAJADA:
-    ; Si estamos aquí, ANTES era >= 35. Verificamos si AHORA es < 35
-    movlw 35
+    ; Está caliente. ¿Bajó a 33°C o menos? (Brecha para evitar oscilaciones)
+    movlw 34
     subwf temp_celsius, w, c
     btfsc STATUS, 0, c
-    goto FIN_TIMER0_ADC ; Sigue arriba, ignorar
+    goto FIN_TIMER0_ADC ; Sigue arriba de 33, salir
 
-    bcf LATC, 6, c ; ¡Cruzó hacia abajo! Apagado automático
+    bcf estado_umbral, 0, c ; Cambiar estado lógico a Frío
+    bcf LATC, 6, c ; Apagar ventilador automáticamente
 
 FIN_TIMER0_ADC:
-    bsf ADCON0, 1, c ; Iniciar siguiente conversión ADC
+    bsf ADCON0, 1, c ; Iniciar la conversión ADC para el siguiente ciclo
     retfie
 
 END resetVec
