@@ -18,6 +18,11 @@ unidades:        DS 1
 delay_cnt1:      DS 1
 delay_cnt2:      DS 1
 temp_div:        DS 1
+; --- VARIABLES DEL FILTRO DIGITAL ADC ---
+adc_count:       DS 1
+adc_acc_l:       DS 1
+adc_acc_h:       DS 1
+temp_shift:      DS 1
 
 ; --- VECTORES DE INTERRUPCIÓN Y RESET ABSOLUTOS ---
 psect resetVec, class=CODE, delta=1, abs
@@ -54,6 +59,14 @@ MAIN:
     call    CONFIG_ADC
     call    CONFIG_TIMER0
 
+    ; Inicializar variables de filtro
+    movlw   16
+    movwf   adc_count, c
+    clrf    adc_acc_l, c
+    clrf    adc_acc_h, c
+    clrf    temp_celsius, c
+    clrf    modo_pantalla, c
+
     ; Lectura inicial ADC
     bsf     ADCON0, 1, c
 ESPERAR_ADC_INIT:
@@ -63,7 +76,7 @@ ESPERAR_ADC_INIT:
     bcf     STATUS, 0, c
     rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
-    movwf   temp_celsius, c ; Lectura directa en °C (sin multiplicar x2)
+    movwf   temp_celsius, c
     call    CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -86,12 +99,12 @@ TABLA_7SEG:
     return
 
 CONFIG_PUERTOS:
-    bsf     TRISB, 0, c  ; RB0, RB1, RB2 Entradas
+    bsf     TRISB, 0, c  ; RB0 (INT0), RB1 (INT1), RB2 (INT2) Entradas
     bsf     TRISB, 1, c
     bsf     TRISB, 2, c
-    bsf     TRISA, 0, c  ; RA0 Entrada LM35
+    bsf     TRISA, 0, c  ; RA0 (AN0) Entrada LM35
 
-    clrf    TRISC, c     ; PORTC Salidas
+    clrf    TRISC, c     ; PORTC Salidas (RC0: Decenas, RC1: Unidades, RC2: LED Alarma, RC6: Ventilador)
     clrf    TRISD, c     ; PORTD Salidas para 7SEG
     clrf    LATC, c
     clrf    LATD, c
@@ -118,7 +131,7 @@ CONFIG_INTERRUPCIONES:
     return
 
 CONFIG_ADC:
-    movlw   0b00001110     ; AN0 analógico
+    movlw   0b00001110     ; AN0 analógico, demás digitales
     movwf   ADCON1, c
     movlw   0b10101010     ; Justificación DERECHA (10 bits), 12 TAD, Fosc/32
     movwf   ADCON2, c
@@ -180,7 +193,7 @@ FIN_BCD:
     return
 
 MULTIPLEXAR_DISPLAYS:
-    ; Apagar ambos displays primero (Anti-parpadeo / Blanking)
+    ; Apagar ambos displays primero (Blanking anti-fantasma)
     bcf     LATC, 0, c
     bcf     LATC, 1, c
 
@@ -239,7 +252,7 @@ ATENDER_INT0:
 ATENDER_INT1:
     call    DELAY_DEBOUNCE
     btfss   PORTB, 1, c          ; Confirmar presión en GND
-    btg     LATC, 6, c           ; Toggle Ventilador
+    btg     LATC, 6, c           ; Toggle Ventilador (Manual)
     bcf     INTCON3, 0, c
     retfie
 
@@ -251,22 +264,58 @@ ATENDER_INT2:
     retfie
 
 ATENDER_TIMER0:
-    bcf     INTCON, 2, c
+    bcf     INTCON, 2, c         ; Limpiar bandera Timer0
     
-    ; Lectura ADC directa en °C
+    ; 1. Tomar lectura instantánea del ADC
+    bsf     ADCON0, 1, c
+WAIT_ADC_ISR:
+    btfsc   ADCON0, 1, c
+    goto    WAIT_ADC_ISR
+
+    ; 2. Obtener grados Celsius directos (ADC / 2)
     bcf     STATUS, 0, c
     rrcf    ADRESH, w, c
     rrcf    ADRESL, w, c
-    movwf   temp_celsius, c     ; Lectura correcta sin rlncf
+
+    ; 3. Acumular en filtro de 16 muestras
+    addwf   adc_acc_l, f, c
+    btfsc   STATUS, 0, c
+    incf    adc_acc_h, f, c
+
+    decfsz  adc_count, f, c
+    goto    FIN_TIMER0_ISR
+
+    ; --- PROCESO CADA 16 MUESTRAS (~0.5 SEGUNDOS) ---
+    movlw   16
+    movwf   adc_count, c
+
+    ; Dividir acumulación entre 16 (Shift a la derecha x4)
+    movlw   4
+    movwf   temp_shift, c
+SHIFT_LOOP_ISR:
+    bcf     STATUS, 0, c
+    rrcf    adc_acc_h, f, c
+    rrcf    adc_acc_l, f, c
+    decfsz  temp_shift, f, c
+    goto    SHIFT_LOOP_ISR
+
+    ; Asignar lectura filtrada a temp_celsius
+    movf    adc_acc_l, w, c
+    movwf   temp_celsius, c
+
+    ; Resetear acumuladores
+    clrf    adc_acc_l, c
+    clrf    adc_acc_h, c
+
     call    CALCULAR_FAHRENHEIT
 
-    ; Encendido automático del ventilador al superar 35°C
+    ; 4. Encendido automático del ventilador SOLO si supera los 35°C
     movlw   35
     subwf   temp_celsius, w, c
     btfsc   STATUS, 0, c
-    bsf     LATC, 6, c
+    bsf     LATC, 6, c           ; Activa el ventilador si T >= 35°C
 
-    bsf     ADCON0, 1, c        ; Iniciar nueva conversión ADC
+FIN_TIMER0_ISR:
     retfie
 
 DELAY_DEBOUNCE:
