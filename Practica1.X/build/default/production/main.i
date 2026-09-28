@@ -5523,6 +5523,11 @@ ESPERAR_ADC_INIT:
     rrcf ADRESL, w, c
     movwf temp_celsius, c
 
+    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
+    movlw 3 ; Offset de -3 grados
+    cpfslt temp_celsius, c
+    subwf temp_celsius, f, c
+
     call CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -5743,6 +5748,11 @@ VERIFICAR_MUESTREO:
     rrcf ADRESL, w, c
     movwf temp_celsius, c
 
+    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
+    movlw 3 ; Offset de -3 grados
+    cpfslt temp_celsius, c
+    subwf temp_celsius, f, c
+
     call CALCULAR_FAHRENHEIT
 
     ; --- CONTROL SIMULTÁNEO VENTILADOR Y ALARMA ---
@@ -5750,7 +5760,7 @@ VERIFICAR_MUESTREO:
     goto REVISAR_BAJADA
 
 REVISAR_SUBIDA:
-    movlw 30 ; Umbral de subida: 30°C
+    movlw 30 ; Nuevo umbral de subida: 30°C
     subwf temp_celsius, w, c
     btfss STATUS, 0, c
     goto FIN_TIMER0_ADC
@@ -5761,7 +5771,7 @@ REVISAR_SUBIDA:
     goto FIN_TIMER0_ADC
 
 REVISAR_BAJADA:
-    movlw 27 ; NUEVO UMBRAL AMPLIADO ANTI-REBOTES (27°C)
+    movlw 29 ; Nuevo umbral de bajada: 29°C
     subwf temp_celsius, w, c
     btfsc STATUS, 0, c
     goto FIN_TIMER0_ADC
