@@ -5523,6 +5523,12 @@ ESPERAR_ADC_INIT:
     rrcf ADRESL, w, c ; Mueve el Carry a ADRESL y divide todo entre 2
     movwf temp_celsius, c
 
+    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
+    ; Ajuste estático para compensar la caída de Vref+ por consumo en protoboard
+    movlw 3 ; Offset de -3 grados
+    cpfslt temp_celsius, c ; Evita desbordamiento si la temperatura es < 3
+    subwf temp_celsius, f, c
+
     call CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -5743,6 +5749,12 @@ VERIFICAR_MUESTREO:
     rrcf ADRESH, f, c ; Desplaza el bit bajo de ADRESH al Carry
     rrcf ADRESL, w, c ; Mueve el Carry a ADRESL y divide todo entre 2
     movwf temp_celsius, c
+
+    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
+    ; Ajuste estático para compensar la caída de Vref+ por consumo en protoboard
+    movlw 3 ; Offset de -3 grados
+    cpfslt temp_celsius, c ; Evita desbordamiento si la temperatura es < 3
+    subwf temp_celsius, f, c
 
     call CALCULAR_FAHRENHEIT
 
