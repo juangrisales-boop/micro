@@ -5519,14 +5519,13 @@ ESPERAR_ADC_INIT:
 
     ; --- LECTURA REAL DE 10 BITS (ADRESH:ADRESL) DIVIDIDO ENTRE 2 ---
     bcf STATUS, 0, c
-    rrcf ADRESH, f, c ; Desplaza el bit bajo de ADRESH al Carry
-    rrcf ADRESL, w, c ; Mueve el Carry a ADRESL y divide todo entre 2
+    rrcf ADRESH, f, c
+    rrcf ADRESL, w, c
     movwf temp_celsius, c
 
     ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
-    ; Ajuste estático para compensar la caída de Vref+ por consumo en protoboard
     movlw 3 ; Offset de -3 grados
-    cpfslt temp_celsius, c ; Evita desbordamiento si la temperatura es < 3
+    cpfslt temp_celsius, c
     subwf temp_celsius, f, c
 
     call CALCULAR_FAHRENHEIT
@@ -5562,9 +5561,8 @@ CONFIG_PUERTOS:
     return
 
 CONFIG_INTERRUPCIONES:
-    bcf INTCON2, 7, c ; Pull-ups internos
+    bcf INTCON2, 7, c
 
-    ; Flanco de bajada
     bcf INTCON2, 6, c
     bcf INTCON2, 5, c
     bcf INTCON2, 4, c
@@ -5746,40 +5744,41 @@ VERIFICAR_MUESTREO:
 
     ; --- LECTURA REAL DE 10 BITS (ADRESH:ADRESL) DIVIDIDO ENTRE 2 ---
     bcf STATUS, 0, c
-    rrcf ADRESH, f, c ; Desplaza el bit bajo de ADRESH al Carry
-    rrcf ADRESL, w, c ; Mueve el Carry a ADRESL y divide todo entre 2
+    rrcf ADRESH, f, c
+    rrcf ADRESL, w, c
     movwf temp_celsius, c
 
     ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
-    ; Ajuste estático para compensar la caída de Vref+ por consumo en protoboard
     movlw 3 ; Offset de -3 grados
-    cpfslt temp_celsius, c ; Evita desbordamiento si la temperatura es < 3
+    cpfslt temp_celsius, c
     subwf temp_celsius, f, c
 
     call CALCULAR_FAHRENHEIT
 
-    ; --- CONTROL DE VENTILADOR CON HISTÉRESIS ---
+    ; --- CONTROL SIMULTÁNEO VENTILADOR Y ALARMA ---
     btfsc estado_umbral, 0, c
     goto REVISAR_BAJADA
 
 REVISAR_SUBIDA:
-    movlw 35
+    movlw 30 ; Nuevo umbral de subida: 30°C
     subwf temp_celsius, w, c
     btfss STATUS, 0, c
     goto FIN_TIMER0_ADC
 
     bsf estado_umbral, 0, c
-    bsf LATC, 6, c
+    bsf LATC, 6, c ; Enciende ventilador
+    bsf LATC, 2, c ; Enciende alarma simultáneamente
     goto FIN_TIMER0_ADC
 
 REVISAR_BAJADA:
-    movlw 34
+    movlw 29 ; Nuevo umbral de bajada: 29°C
     subwf temp_celsius, w, c
     btfsc STATUS, 0, c
     goto FIN_TIMER0_ADC
 
     bcf estado_umbral, 0, c
-    bcf LATC, 6, c
+    bcf LATC, 6, c ; Apaga ventilador
+    bcf LATC, 2, c ; Apaga alarma simultáneamente
 
 FIN_TIMER0_ADC:
     bsf ADCON0, 1, c
