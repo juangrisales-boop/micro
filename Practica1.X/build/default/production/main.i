@@ -5523,6 +5523,11 @@ ESPERAR_ADC_INIT:
     rrcf ADRESL, w, c
     movwf temp_celsius, c
 
+    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
+    movlw 3 ; Offset discreto de -3 grados
+    cpfslt temp_celsius, c
+    subwf temp_celsius, f, c
+
     call CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -5742,6 +5747,11 @@ VERIFICAR_MUESTREO:
     rrcf ADRESH, f, c
     rrcf ADRESL, w, c
     movwf temp_celsius, c
+
+    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
+    movlw 3 ; Offset de -3 grados
+    cpfslt temp_celsius, c
+    subwf temp_celsius, f, c
 
     call CALCULAR_FAHRENHEIT
 
