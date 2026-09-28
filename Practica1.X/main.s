@@ -75,15 +75,10 @@ ESPERAR_ADC_INIT:
     
     ; --- LECTURA REAL DE 10 BITS (ADRESH:ADRESL) DIVIDIDO ENTRE 2 ---
     bcf     STATUS, 0, c
-    rrcf    ADRESH, f, c     
-    rrcf    ADRESL, w, c     
+    rrcf    ADRESH, f, c     ; Desplaza el bit bajo de ADRESH al Carry
+    rrcf    ADRESL, w, c     ; Mueve el Carry a ADRESL y divide todo entre 2
     movwf   temp_celsius, c
     
-    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
-    movlw   3                    ; Offset de -3 grados
-    cpfslt  temp_celsius, c      
-    subwf   temp_celsius, f, c
-
     call    CALCULAR_FAHRENHEIT
 
 MAIN_LOOP:
@@ -304,11 +299,6 @@ VERIFICAR_MUESTREO:
     rrcf    ADRESL, w, c     
     movwf   temp_celsius, c
     
-    ; --- CALIBRACIÓN DE OFFSET (COMPENSACIÓN VDD) ---
-    movlw   3                    ; Offset de -3 grados
-    cpfslt  temp_celsius, c      
-    subwf   temp_celsius, f, c
-
     call    CALCULAR_FAHRENHEIT
 
     ; --- CONTROL SIMULTÁNEO VENTILADOR Y ALARMA ---
@@ -316,7 +306,7 @@ VERIFICAR_MUESTREO:
     goto    REVISAR_BAJADA       
 
 REVISAR_SUBIDA:
-    movlw   30                   ; Nuevo umbral de subida: 30°C
+    movlw   30                   ; Umbral de subida: 30°C
     subwf   temp_celsius, w, c
     btfss   STATUS, 0, c
     goto    FIN_TIMER0_ADC       
@@ -327,7 +317,7 @@ REVISAR_SUBIDA:
     goto    FIN_TIMER0_ADC
 
 REVISAR_BAJADA:
-    movlw   29                   ; Nuevo umbral de bajada: 29°C
+    movlw   29                   ; Umbral de bajada: 29°C
     subwf   temp_celsius, w, c
     btfsc   STATUS, 0, c
     goto    FIN_TIMER0_ADC       
